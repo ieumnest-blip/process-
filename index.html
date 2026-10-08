@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>건물지원사업 진행현황</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@font-face{font-family:'Kyobo';src:url('KyoboHandwriting2021sjy.ttf') format('truetype')}
+body,input,select,textarea,button,table,th,td,code{font-family:'Kyobo','Pretendard',-apple-system,sans-serif !important}
+body{background:#FAF8F4;color:#262220}
+.header{background:#1B4B4A;color:#fff;padding:18px 20px 16px;border-bottom:4px solid #E8734A}
+.header h1{font-size:30px;font-weight:800;letter-spacing:-.01em}
+.header p{font-size:20px;opacity:0.7;margin:2px 0 10px}
+.stat-row{display:flex;gap:8px;flex-wrap:wrap}
+.stat-grp{flex:1;min-width:140px;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px 12px}
+.stat-grp-title{font-size:20px;font-weight:700;margin-bottom:6px;color:#F3C39F}
+.stat-inner{display:flex;gap:8px}
+.stat-card{flex:1;text-align:center}
+.stat-val{font-size:33px;font-weight:800;color:#fff}
+.stat-lbl{font-size:26px;opacity:0.75;color:#E4DFD4}
+.tabs{display:flex;gap:4px;background:#fff;padding:6px 12px;border-bottom:1px solid #E8E2D8;position:sticky;top:0;z-index:100}
+.tab{flex:1;padding:10px 0;border:none;background:none;border-radius:10px;font-size:21px;cursor:pointer;font-family:inherit;color:#9C9488;font-weight:600;transition:background .15s,color .15s}
+.tab.active{color:#fff;font-weight:700;background:#1B4B4A}
+.toolbar{padding:10px 12px 6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+.tb-grp{display:flex;gap:6px;align-items:center}
+.tb-sep{width:1px;align-self:stretch;background:#E8E2D8;margin:0 2px}
+.search-wrap{position:relative;flex:0 1 400px}
+.search-inp{width:100%;padding:9px 14px 9px 36px;border-radius:20px;border:1px solid #E0D9CC;font-size:23px;font-family:inherit;background:#fff;outline:none;color:#262220}
+.search-inp:focus{border-color:#E8734A;box-shadow:0 0 0 3px rgba(232,115,74,.16)}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:24px;color:#9C9488;pointer-events:none}
+.search-drop{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #E8E2D8;border-radius:10px;box-shadow:0 8px 24px rgba(38,34,32,.10);max-height:260px;overflow-y:auto;z-index:200;margin-top:4px;display:none}
+.search-drop.open{display:block}
+.search-item{padding:9px 14px;cursor:pointer;font-size:21px;border-bottom:1px solid #F3EFE7;color:#262220}
+.search-item:hover,.search-item.sel{background:#FCE9E1}
+.search-item:last-child{border:none}
+.chips{display:flex;flex-wrap:wrap;gap:4px;padding:4px 12px;min-height:0}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:14px;background:#FCE9E1;color:#B85128;font-size:18px;font-weight:600;cursor:pointer}
+.chip:hover{background:#F8D5C4}
+.chip .cx{font-size:15px;opacity:0.6;margin-left:2px}
+.btn{padding:7px 16px;border:none;border-radius:8px;font-size:21px;cursor:pointer;font-weight:600;font-family:inherit;transition:background .15s}
+.btn-p{background:#1B4B4A;color:#fff}.btn-p:hover{background:#123635}
+.btn-i{background:#E8734A;color:#fff}.btn-i:hover{background:#D35F37}
+.btn-s{background:#F1ECE3;color:#6B6459}.btn-s:hover{background:#E8E2D8}
+.btn-icon{padding:7px 12px;font-size:19px;border-radius:8px}
+.btn-bk{background:#E3F3E9;color:#2F8F5B}.btn-bk:hover{background:#D3ECDD}
+.btn-rs{background:#FBF0DC;color:#9C6414}.btn-rs:hover{background:#F6E4C0}
+.content{padding:0 6px 24px}
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:21px;font-weight:600;white-space:nowrap}
+.b-pass{background:#E3F3E9;color:#2F8F5B;border:1px solid #B9E0C8}
+.b-fix{background:#FBF0DC;color:#9C6414;border:1px solid #EAD19C}
+.b-rej{background:#FAE4E1;color:#B23A2A;border:1px solid #EFB3A8}
+.b-sub{background:#E4F0F6;color:#2E6E92;border:1px solid #B9D7E5}
+.card{padding:10px 14px;border-radius:10px;background:#fff;border:1px solid #EFEAE1;border-left:4px solid #B7CFC9;cursor:pointer;box-shadow:0 1px 2px rgba(38,34,32,.05);margin-bottom:6px}
+.card:hover{box-shadow:0 4px 14px rgba(38,34,32,.10)}
+.card.cp{border-left-color:#2F8F5B}.card.cf{border-left-color:#C58A2E}.card.cr{border-left-color:#B23A2A}
+.card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.card-date{font-size:21px;color:#9C9488}.card-site{font-weight:700;font-size:23px;color:#262220}.card-type{font-size:21px;color:#6B6459}
+.card-detail{font-size:20px;color:#6B6459;margin-top:6px;white-space:pre-line;line-height:1.4;border-top:1px solid #F3EFE7;padding-top:5px;max-height:80px;overflow:hidden}
+.sec{margin-bottom:18px}
+.sec-hdr{padding:8px 0 5px;border-bottom:2px solid #1B4B4A;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.sec-name{font-size:24px;font-weight:700;color:#262220}
+.sec-dur{display:flex;gap:14px;padding:6px 0 3px;flex-wrap:wrap;font-size:21px;color:#6B6459}
+.dur-cards{display:flex;gap:10px;margin-bottom:14px}
+.dur-card{flex:1;border-radius:12px;padding:14px 16px}
+.dc-b{background:#FBF0DC;border:1px solid #EAD19C}.dc-p{background:#E3F3E9;border:1px solid #B9E0C8}
+.dc-b .dl{color:#9C6414}.dc-b .dv{color:#9C6414}.dc-p .dl{color:#2F8F5B}.dc-p .dv{color:#2F8F5B}
+.dl{font-size:21px;font-weight:600;margin-bottom:3px}.dv{font-size:33px;font-weight:800}
+.dt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.dt{width:100%;border-collapse:collapse;font-size:21px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(38,34,32,.06);min-width:1300px;border:1px solid #EFEAE1}
+.dt th{background:#1B4B4A;color:#fff;padding:8px 4px;font-weight:600;white-space:nowrap;text-align:center;cursor:pointer;user-select:none;font-size:21px}
+.dt th:hover{background:#123635}
+.dt td{padding:6px 3px;text-align:center;border-bottom:1px solid #F3EFE7;font-size:21px;color:#262220}
+.dt tr:nth-child(even){background:#FBF9F5}
+.dt td:first-child{text-align:center}
+.dt td:nth-child(2){text-align:left}
+.num-edit{border:none;background:transparent;font-size:21px;width:110px;font-family:inherit;font-weight:600;color:#B85128;cursor:pointer;text-align:center;padding:0}
+.num-edit:focus{outline:1px solid #E8734A;border-radius:3px;background:#fff}
+.memo-cell{min-width:80px;cursor:pointer;font-size:20px;color:#9C9488;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.memo-cell.has{color:#262220;font-weight:500}
+.memo-inp{border:1px solid #E8734A;background:#fff;font-size:20px;width:100%;font-family:inherit;padding:3px 5px;border-radius:4px;min-width:80px;display:none}
+.memo-inp.show{display:block}
+.stg{font-size:20px;padding:3px 8px;border-radius:8px;font-weight:600;white-space:nowrap}
+/* Calendar */
+.cal-wrap{display:flex;gap:20px;width:max-content;min-width:100%}
+.cal-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+.cal-half{width:calc(50vw - 12px);min-width:360px;flex-shrink:0;display:flex;flex-direction:column}
+.cal-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px}
+.cal-title{font-size:26px;font-weight:700;color:#262220}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:#E8E2D8;border:1px solid #E8E2D8;border-radius:8px;overflow:hidden;flex:1}
+.cal-dh{background:#EDF3F1;padding:8px 2px;text-align:center;font-size:20px;font-weight:700;color:#1B4B4A}
+.cal-c{background:#fff;padding:3px;font-size:18px;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.cal-c.empty{background:#FAF8F4}
+.cal-n{font-size:21px;font-weight:600;text-align:right;padding-right:3px;margin-bottom:2px;flex-shrink:0;color:#4A443C}
+.cal-ev{padding:1px 3px;border-radius:3px;margin-bottom:1px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;line-height:1.3}
+.holiday{color:#B23A2A !important;font-size:15px;display:block}
+.ov{position:fixed;inset:0;background:rgba(38,34,32,.38);display:flex;align-items:center;justify-content:center;z-index:1000}
+.modal{background:#fff;border-radius:14px;padding:20px;width:min(520px,94vw);box-shadow:0 24px 60px rgba(38,34,32,.22);max-height:90vh;overflow-y:auto}
+.modal h3{margin-bottom:14px;font-size:26px;color:#262220}
+.modal label{display:block;font-size:21px;color:#6B6459;margin-bottom:10px}
+.modal input,.modal select,.modal textarea{display:block;width:100%;padding:8px 10px;margin-top:4px;border:1px solid #E0D9CC;border-radius:8px;font-size:21px;font-family:inherit;box-sizing:border-box;color:#262220}
+.modal input:focus,.modal select:focus,.modal textarea:focus{outline:none;border-color:#E8734A;box-shadow:0 0 0 3px rgba(232,115,74,.14)}
+.modal textarea{resize:vertical}
+.ma{display:flex;gap:8px;margin-top:16px;justify-content:space-between}
+.btn-d{background:#FAE4E1;color:#B23A2A;border:1px solid #EFB3A8}
+.btn-c{background:#F1ECE3;color:#6B6459}.btn-sv{background:#1B4B4A;color:#fff}
+.btn-d:hover{background:#F5D2CC}.btn-c:hover{background:#E8E2D8}.btn-sv:hover{background:#123635}
+.imp-area{width:100%;min-height:160px;padding:10px;border:2px dashed #E0D9CC;border-radius:10px;font-size:21px;font-family:'D2Coding',monospace;line-height:1.5;resize:vertical;color:#262220}
+.imp-area:focus{border-color:#E8734A;outline:none}
+.imp-pv{margin-top:10px;padding:10px;background:#FAF8F4;border-radius:10px;font-size:20px;max-height:180px;overflow-y:auto}
+.imp-hint{font-size:20px;color:#9C9488;margin-top:6px;line-height:1.5}
+@media(max-width:700px){.cal-wrap{flex-direction:column}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAhN6R4Fl18rLYSNTIKy2EOtrg2AjomjW4",
+    authDomain: "process-note-b9fc9.firebaseapp.com",
+    projectId: "process-note-b9fc9",
+    storageBucket: "process-note-b9fc9.firebasestorage.app",
+    messagingSenderId: "91360712685",
+    appId: "1:91360712685:web:8ba1edbc6b2024ce48b9e4",
+    measurementId: "G-Q3KG4K61XJ"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getFirestore(fbApp);
+  const docRef = doc(db, "buildingSupportTracker", "mainData");
+
+  let fbSaveTimer = null;
+
+  // 원격(다른 기기/탭) 변경 실시간 반영 — 내 쓰기가 서버에 반영되기 전(hasPendingWrites)에는 무시해서 에코를 방지
+  window.fbSubscribe = (onRemoteUpdate) => {
+    onSnapshot(docRef, (snap) => {
+      if (!snap.exists() || snap.metadata.hasPendingWrites) return;
+      onRemoteUpdate(snap.data());
+    }, (err) => console.error('Firestore 동기화 오류', err));
+  };
+
+  window.fbGetOnce = async () => {
+    try {
+      const snap = await getDoc(docRef);
+      return snap.exists() ? snap.data() : null;
+    } catch (e) { console.error('Firestore 로드 실패', e); return null; }
+  };
+
+  // 잦은 저장 호출을 묶어서 Firestore에 반영 (짧은 디바운스)
+  window.fbSaveData = (payload) => {
+    clearTimeout(fbSaveTimer);
+    fbSaveTimer = setTimeout(async () => {
+      try { await setDoc(docRef, { ...payload, _updatedAt: Date.now() }); }
+      catch (e) { console.error('Firestore 저장 실패', e); }
+    }, 500);
+  };
+
+  // 모듈 스크립트는 defer로 실행되어 아래 classic 스크립트보다 늦게 준비될 수 있으므로 준비 완료를 알림
+  window.dispatchEvent(new Event('fb-ready'));
+</script>
+<script>
+const D=[
+{id:1,site:"조이푸드",date:"2026-04-24",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:2,site:"조이푸드",date:"2026-05-22",type:"신청서 검토",result:"보완요청",detail:"모니터링 업체 이미지파일 X\n모듈 모델명 전체 기입(BFG645)\n신청자 확인서 글자 깨짐\n(강성연 043-901-6015)"},
+{id:3,site:"조이푸드",date:"2026-05-27",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:4,site:"조이푸드",date:"2026-06-01",type:"신청서 검토",result:"보완요청",detail:"모니터링 업체 이미지파일 X\n(강성연 043-901-6015)"},
+{id:5,site:"조이푸드",date:"2026-06-01",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:6,site:"조이푸드",date:"2026-06-02",type:"신청서 검토",result:"보완요청",detail:"공장등록증상 소재지 상이\n(강성연 043-901-6015)"},
+{id:7,site:"조이푸드",date:"2026-06-02",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:8,site:"조이푸드",date:"2026-06-04",type:"신청서 검토",result:"보완요청",detail:"주소 불일치\n계약전력 입력 누락"},
+{id:9,site:"조이푸드",date:"2026-06-05",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:10,site:"조이푸드",date:"2026-07-10",type:"사업계획서 검토신청",result:"",detail:"사업계획서 검토신청"},
+{id:11,site:"한빛1",date:"2026-04-24",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:12,site:"한빛1",date:"2026-05-28",type:"신청서 검토",result:"보완요청",detail:"계약전력량 970kW 수정\n모듈 모델명 625까지\n(051-999-6814)"},
+{id:13,site:"한빛1",date:"2026-05-28",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:14,site:"한빛2",date:"2026-04-24",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:15,site:"한빛2",date:"2026-05-22",type:"신청서 검토",result:"보완요청",detail:"모듈 모델명 645\n등기부등본 추가\n설치용량 확인\n(051-999-6814)"},
+{id:16,site:"한빛2",date:"2026-05-28",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:17,site:"승림전자",date:"2026-04-24",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:18,site:"승림전자",date:"2026-05-14",type:"신청서 검토",result:"보완요청",detail:"모니터링 업체 사업자번호/주소\n본인서명사실확인서\n신청자 확인서 추가\n(정연옥 T.055-600-8121)"},
+{id:19,site:"승림전자",date:"2026-05-18",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:20,site:"승림전자",date:"2026-05-19",type:"신청서 검토",result:"보완요청",detail:"개발행위허가 완료 여부"},
+{id:21,site:"승림전자",date:"2026-05-19",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:22,site:"승림전자",date:"2026-05-19",type:"신청서 검토",result:"보완요청",detail:"계약전력량 불일치"},
+{id:23,site:"승림전자",date:"2026-05-19",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:24,site:"영가다",date:"2026-04-24",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:25,site:"영가다",date:"2026-05-19",type:"신청서 검토",result:"보완요청",detail:"계약전력량 불일치\n허가서 처리 완료 후 제출"},
+{id:26,site:"영가다",date:"2026-05-19",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:27,site:"영가다",date:"2026-05-19",type:"신청서 검토",result:"보완요청",detail:"개발행위 완료여부 해당없음"},
+{id:28,site:"영가다",date:"2026-05-19",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:29,site:"영가가",date:"2026-04-22",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:30,site:"영가가",date:"2026-05-28",type:"신청서 검토",result:"보완요청",detail:"사업비 단위 확인\n모듈모델명\n위성사진\n인감증명서\n(042-323-4408 / 김대일)"},
+{id:31,site:"영가가",date:"2026-06-01",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:32,site:"디와이오토",date:"2026-05-11",type:"신청서 검토",result:"적합",detail:"검토완료 (사업취소 관련)"},
+{id:33,site:"디와이오토",date:"2026-07-29",type:"사업계획서 검토신청",result:"적합",detail:"검토완료"},
+{id:34,site:"디와이오토",date:"2026-07-29",type:"선급금 신청",result:"",detail:"선급금 신청"},
+{id:35,site:"비앤디",date:"2026-04-24",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:36,site:"비앤디",date:"2026-05-18",type:"신청서 검토",result:"보완요청",detail:"계약전력량 불일치\n인감증명서 주민번호 삭제\n중견기업확인서\n한전 전기사용내역"},
+{id:37,site:"비앤디",date:"2026-05-18",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:38,site:"비앤디",date:"2026-05-19",type:"신청서 검토",result:"보완요청",detail:"한전 전기사용내역 25.4-26.3 입력"},
+{id:39,site:"비앤디",date:"2026-05-19",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:40,site:"비앤디",date:"2026-07-10",type:"사업계획서 검토신청",result:"",detail:"사업계획서 검토신청"},
+{id:41,site:"코스맥스A",date:"2026-04-24",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:42,site:"코스맥스A",date:"2026-05-18",type:"신청서 검토",result:"보완요청",detail:"계약전력량 불일치\n인감증명서\n중견기업확인서\n한전 전기사용내역"},{id:43,site:"코스맥스A",date:"2026-05-18",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:44,site:"코스맥스A",date:"2026-05-19",type:"신청서 검토",result:"보완요청",detail:"한전 전기사용내역 25.4-26.3 입력"},{id:45,site:"코스맥스A",date:"2026-05-19",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:46,site:"코스맥스B",date:"2026-04-24",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:47,site:"코스맥스B",date:"2026-05-18",type:"신청서 검토",result:"보완요청",detail:"계약전력 불일치\n한전 전기사용내역\n중견기업확인서\n인감증명서"},{id:48,site:"코스맥스B",date:"2026-05-18",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:49,site:"코스맥스B",date:"2026-05-19",type:"신청서 검토",result:"보완요청",detail:"한전 전기사용내역 25.4-26.3 입력"},{id:50,site:"코스맥스B",date:"2026-05-19",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:51,site:"코스맥스B",date:"2026-07-15",type:"사업계획서 검토신청",result:"보완요청",detail:"설치계약서 사업비 상이\n(정연옥 T.055-600-8121)"},{id:52,site:"코스맥스B",date:"2026-07-20",type:"사업계획서 검토신청",result:"보완요청",detail:"사업기간 수정\n(정연옥 T.055-600-8121)"},{id:53,site:"코스맥스B",date:"2026-07-21",type:"사업계획서 검토신청",result:"적합",detail:"적합"},{id:54,site:"코스맥스B",date:"2026-07-27",type:"선급금 신청",result:"",detail:"선급금 신청"},
+{id:55,site:"진양",date:"2026-05-29",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:56,site:"코스맥스엔비티G",date:"2026-04-24",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:57,site:"코스맥스엔비티G",date:"2026-05-18",type:"신청서 검토",result:"보완요청",detail:"계약전력량 불일치\n인감증명서\n중견기업확인서\n한전 전기사용내역"},{id:58,site:"코스맥스엔비티G",date:"2026-05-18",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:59,site:"코스맥스엔비티G",date:"2026-05-19",type:"신청서 검토",result:"보완요청",detail:"한전 전기사용내역 25.4-26.3 입력"},{id:60,site:"코스맥스엔비티G",date:"2026-05-19",type:"신청서 검토",result:"적합",detail:"적합"},{id:61,site:"코스맥스엔비티G",date:"2026-07-10",type:"사업계획서 검토신청",result:"",detail:"사업계획서 검토신청"},
+{id:62,site:"코스맥스엔비티g",date:"2026-04-24",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:63,site:"코스맥스엔비티g",date:"2026-05-18",type:"신청서 검토",result:"보완요청",detail:"계약전력 불일치\n한전 전기사용내역\n중견기업확인서\n인감증명서"},{id:64,site:"코스맥스엔비티g",date:"2026-05-18",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:65,site:"코스맥스엔비티g",date:"2026-05-19",type:"신청서 검토",result:"보완요청",detail:"한전 전기사용내역 25.4-26.3 입력"},{id:66,site:"코스맥스엔비티g",date:"2026-05-19",type:"신청서 검토",result:"적합",detail:"적합"},{id:67,site:"코스맥스엔비티g",date:"2026-05-29",type:"신청서 검토",result:"적합",detail:"적합"},{id:68,site:"코스맥스엔비티g",date:"2026-07-15",type:"사업계획서 검토신청",result:"적합",detail:"적합"},{id:69,site:"코스맥스엔비티g",date:"2026-07-30",type:"선급금 신청",result:"보완요청",detail:"선급금이행보증증권 계약만료일"},{id:70,site:"코스맥스엔비티g",date:"2026-07-31",type:"선급금 신청",result:"",detail:"선급금 신청"},
+{id:71,site:"한플론",date:"2026-06-04",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:72,site:"북강릉",date:"2026-04-17",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:73,site:"북강릉",date:"2026-05-11",type:"신청서 검토",result:"보완요청",detail:"계약 종합정보 내역서\n(박응식 053-580-7919)"},{id:74,site:"북강릉",date:"2026-05-11",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:75,site:"북강릉",date:"2026-05-11",type:"신청서 검토",result:"보완요청",detail:"전기 사용기간 25.4~26.3 수정"},{id:76,site:"북강릉",date:"2026-05-20",type:"신청서 검토",result:"적합",detail:"검토완료"},{id:77,site:"북강릉",date:"2026-07-29",type:"사업계획서 검토신청",result:"적합",detail:"검토완료"},{id:78,site:"북강릉",date:"2026-07-29",type:"선급금 신청",result:"",detail:"선급금 신청"},
+{id:79,site:"서진1",date:"2026-04-17",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:80,site:"서진1",date:"2026-05-11",type:"신청서 검토",result:"반려",detail:"계약 종합정보 내역서\n(박응식 053-580-7919)"},{id:81,site:"서진1",date:"2026-05-11",type:"신청서 검토",result:"보완요청",detail:"전기 사용기간 수정\n(박응식 053-580-7919)"},{id:82,site:"서진1",date:"2026-05-20",type:"신청서 검토",result:"적합",detail:"검토완료"},{id:83,site:"서진1",date:"2026-07-29",type:"사업계획서 검토신청",result:"적합",detail:"검토완료"},{id:84,site:"서진1",date:"2026-07-29",type:"선급금 신청",result:"",detail:"선급금 신청"},
+{id:85,site:"서진2",date:"2026-06-04",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:86,site:"강릉",date:"2026-04-20",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:87,site:"강릉",date:"2026-05-28",type:"신청서 검토",result:"보완요청",detail:"모듈 모델명\n신청서 양식/일자\n인증서 제출용도\n위성사진\n(042-323-4408 / 김대일)"},{id:88,site:"강릉",date:"2026-06-01",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:89,site:"기독교복음선교회B",date:"2026-04-20",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:90,site:"기독교복음선교회B",date:"2026-05-28",type:"신청서 검토",result:"보완요청",detail:"모듈/인버터/접속함 모델명\n인증서 제출용도\n위성사진\n날인 확인\n(042-323-4408 / 김대일)"},{id:91,site:"기독교복음선교회B",date:"2026-06-02",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:92,site:"기독교복음선교회A",date:"2026-04-20",type:"신청서 제출",result:"",detail:"신청서 제출"},{id:93,site:"기독교복음선교회A",date:"2026-05-28",type:"신청서 검토",result:"보완요청",detail:"모듈 모델명\n신청서 양식/일자\n인증서 제출용도\n위성사진\n(042-323-4408 / 김대일)"},{id:94,site:"기독교복음선교회A",date:"2026-06-01",type:"신청서 검토",result:"적합",detail:"적합"},
+// ── 2025년 1차 ──
+{id:101,site:"기미전자",date:"2025-03-28",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:102,site:"기미전자",date:"2025-04-17",type:"신청서 검토",result:"보완요청",detail:"법인인감증명서: 대표자 주민등록번호 뒷자리 비공개\n(검토자: 정연옥, T.055-600-8121)"},
+{id:103,site:"기미전자",date:"2025-04-17",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:104,site:"기미전자",date:"2025-05-30",type:"사업계획서 검토신청",result:"적합",detail:"적합"},
+{id:105,site:"기미전자",date:"2025-06-20",type:"선급금 신청",result:"적합",detail:"적합"},
+{id:106,site:"기미전자",date:"2025-06-24",type:"선급금 지급",result:"",detail:"선급금 지급"},
+{id:107,site:"기미전자",date:"2025-07-28",type:"착공여부 검토신청",result:"적합",detail:"적합"},
+{id:108,site:"기미전자",date:"2025-09-15",type:"보조금 지급",result:"",detail:"보조금 지급"},
+{id:111,site:"건천중앙교회",date:"2025-03-28",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:112,site:"건천중앙교회",date:"2025-04-11",type:"신청서 검토",result:"보완요청",detail:"설치계획서: 사업기간/설치기간 90일 이내 기재\n인버터 모델명 상이\n사업비 공급가액=총사업비(부가세 제외)\n설치조감도 방위표 표시요"},
+{id:113,site:"건천중앙교회",date:"2025-04-14",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:114,site:"건천중앙교회",date:"2025-04-28",type:"신청서 검토",result:"보완요청",detail:"교회직인증명서 중복첨부(삭제요)"},
+{id:115,site:"건천중앙교회",date:"2025-04-28",type:"신청서 검토",result:"적합",detail:"적합\n*추후 사업선정시 설치도면은 상세도면 작성, 설계사무소 또는 건축사 직인 필수"},
+{id:116,site:"건천중앙교회",date:"2025-06-13",type:"사업계획서 검토신청",result:"적합",detail:"적합"},
+{id:117,site:"건천중앙교회",date:"2025-06-16",type:"선급금 신청",result:"적합",detail:"적합"},
+{id:118,site:"건천중앙교회",date:"2025-06-17",type:"선급금 지급",result:"",detail:"선급금 지급"},
+{id:119,site:"건천중앙교회",date:"2025-07-29",type:"착공여부 검토신청",result:"적합",detail:"적합"},
+{id:120,site:"건천중앙교회",date:"2025-10-14",type:"보조금 지급",result:"",detail:"보조금 지급"},
+{id:131,site:"보성열처리",date:"2025-03-28",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:132,site:"보성열처리",date:"2025-04-17",type:"신청서 검토",result:"보완요청",detail:"법인인감증명서: 대표이사 주민등록번호 뒷자리 비공개\n(검토자: 정연옥, T.055-600-8121)"},
+{id:133,site:"보성열처리",date:"2025-04-17",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:134,site:"보성열처리",date:"2025-05-30",type:"사업계획서 검토신청",result:"보완요청",detail:"표준설치계약서: 설치기간 수정(2025.05.29~2025.08.27)\n(검토자: 정연옥, T.055-600-8121)"},
+{id:135,site:"보성열처리",date:"2025-06-02",type:"사업계획서 검토신청",result:"보완요청",detail:"표준설치계약서: 보조금, 설치자 분담비용이 시스템과 상이\n(검토자: 정연옥, T.055-600-8121)"},
+{id:136,site:"보성열처리",date:"2025-06-04",type:"사업계획서 검토신청",result:"적합",detail:"적합"},
+{id:137,site:"보성열처리",date:"2025-06-16",type:"선급금 신청",result:"보완요청",detail:"선급금이행보증서 첨부파일 수정요청"},
+{id:138,site:"보성열처리",date:"2025-06-17",type:"선급금 신청",result:"적합",detail:"적합"},
+{id:139,site:"보성열처리",date:"2025-06-17",type:"선급금 지급",result:"",detail:"선급금 지급"},
+{id:140,site:"보성열처리",date:"2025-07-28",type:"착공여부 검토신청",result:"적합",detail:"적합"},
+{id:141,site:"보성열처리",date:"2025-09-15",type:"보조금 지급",result:"",detail:"보조금 지급"},
+{id:151,site:"케이에스엠",date:"2025-03-28",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:152,site:"케이에스엠",date:"2025-04-17",type:"신청서 검토",result:"보완요청",detail:"사업기간: 설치계획서 설치기간과 동일 작성(90일이내)\n법인인감증명서: 대표이사 주민번호 뒷자리 비공개\n(검토자: 정연옥, T.055-600-8121)"},
+{id:153,site:"케이에스엠",date:"2025-04-17",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:154,site:"케이에스엠",date:"2025-05-30",type:"사업계획서 검토신청",result:"보완요청",detail:"표준설치계약서: 사업비가 설치계획서와 상이\n(검토자: 정연옥, T.055-600-8121)"},
+{id:155,site:"케이에스엠",date:"2025-06-02",type:"사업계획서 검토신청",result:"적합",detail:"적합"},
+{id:156,site:"케이에스엠",date:"2025-06-16",type:"선급금 신청",result:"적합",detail:"적합"},
+{id:157,site:"케이에스엠",date:"2025-06-17",type:"선급금 지급",result:"",detail:"선급금 지급"},
+{id:158,site:"케이에스엠",date:"2025-07-28",type:"착공여부 검토신청",result:"적합",detail:"적합"},
+{id:159,site:"케이에스엠",date:"2025-09-15",type:"보조금 지급",result:"",detail:"보조금 지급"},
+{id:161,site:"영진기업",date:"2025-03-31",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:162,site:"영진기업",date:"2025-03-31",type:"신청서 검토",result:"보완요청",detail:"업체 수정요청"},
+{id:163,site:"영진기업",date:"2025-03-31",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:164,site:"영진기업",date:"2025-04-11",type:"신청서 검토",result:"보완요청",detail:"계약전력량: 한전계약정보 참고\n설치계획서: 사업기간/설치기간 90일 이내 기재\n사업비 공급가액=총사업비(부가세 제외)\n설치조감도 방위표 표시요"},
+{id:165,site:"영진기업",date:"2025-04-28",type:"신청서 검토",result:"적합",detail:"적합\n*추후 사업선정시 설치도면은 상세도면 작성, 설계사무소 또는 건축사 직인 필수"},
+{id:166,site:"영진기업",date:"2025-06-13",type:"사업계획서 검토신청",result:"적합",detail:"적합"},
+{id:167,site:"영진기업",date:"2025-06-16",type:"선급금 신청",result:"적합",detail:"적합"},
+{id:168,site:"영진기업",date:"2025-06-17",type:"선급금 지급",result:"",detail:"선급금 지급"},
+{id:169,site:"영진기업",date:"2025-07-29",type:"착공여부 검토신청",result:"적합",detail:"적합"},
+{id:170,site:"영진기업",date:"2025-10-14",type:"보조금 지급",result:"",detail:"보조금 지급"},
+// ── 2025년 2차 ──
+{id:181,site:"미소찬",date:"2025-08-01",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:182,site:"미소찬",date:"2025-08-20",type:"신청서 검토",result:"보완요청",detail:"인감증명서 주민번호 뒷자리 마스킹\nBPM 신청서상 계약전력, 연간/월평균전력량 작성\n서류 일자 누락 기입\n(한영규 대리 042-323-4404)"},
+{id:183,site:"미소찬",date:"2025-08-21",type:"신청서 제출",result:"",detail:"신청서 제출"},
+{id:184,site:"미소찬",date:"2025-08-22",type:"신청서 검토",result:"보완요청",detail:"설치계획서 마지막 페이지 신청자 참여기업 날인 누락"},
+{id:185,site:"미소찬",date:"2025-08-25",type:"신청서 검토",result:"적합",detail:"적합"},
+{id:186,site:"미소찬",date:"2025-09-22",type:"사업계획서 검토신청",result:"적합",detail:"적합"},
+{id:187,site:"미소찬",date:"2025-09-23",type:"선급금 신청",result:"적합",detail:"적합"},
+{id:188,site:"미소찬",date:"2025-09-23",type:"선급금 지급",result:"",detail:"선급금 지급"},
+{id:189,site:"미소찬",date:"2025-11-26",type:"착공여부 검토신청",result:"보완요청",detail:"착공기한 초과 사유서 작성바랍니다"},
+{id:190,site:"미소찬",date:"2025-12-05",type:"착공여부 검토신청",result:"보완요청",detail:"사유서 재제출 바랍니다"},
+{id:191,site:"미소찬",date:"2025-12-05",type:"착공여부 검토신청",result:"적합",detail:"적합"},
+{id:192,site:"미소찬",date:"2026-01-20",type:"보조금 지급",result:"",detail:"보조금 지급"}
+];
+// ── 저장/불러오기 (localStorage 캐시 + Firestore 실시간 동기화) ──
+const SAVE_KEY='bst_data_v2';
+let lastSyncedAt=0; // 이 기기에서 마지막으로 반영된 데이터의 시각(로컬 저장 or 원격 수신)
+
+function saveAll(){
+  lastSyncedAt=Date.now();
+  const payload={data,nid,siteInfo,siteMemo,siteAdvE,siteGrE,selYear};
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({...payload,_updatedAt:lastSyncedAt}));}catch(e){}
+  if(window.fbSaveData)window.fbSaveData(payload);
+}
+function loadAll(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(raw){
+      const o=JSON.parse(raw);
+      if(o.data&&o.data.length){
+        data=o.data;nid=o.nid||200;siteInfo=o.siteInfo||{};siteMemo=o.siteMemo||{};siteAdvE=o.siteAdvE||{};siteGrE=o.siteGrE||{};selYear=o.selYear||TY;
+        lastSyncedAt=o._updatedAt||0;
+        return true;
+      }
+    }
+  }catch(e){}
+  return false;
+}
+function applyRemote(o){
+  if(!o||!o.data||!o.data.length)return;
+  data=o.data;nid=o.nid||200;siteInfo=o.siteInfo||{};siteMemo=o.siteMemo||{};siteAdvE=o.siteAdvE||{};siteGrE=o.siteGrE||{};selYear=o.selYear||TY;
+  lastSyncedAt=o._updatedAt||Date.now();
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({...o}));}catch(e){}
+  render();
+}
+// Firestore에 더 최신 데이터가 있으면 반영 후, 이후 변경사항은 실시간 구독
+function initCloudSync(){
+  if(!window.fbGetOnce)return;
+  window.fbGetOnce().then(remote=>{
+    if(remote&&(remote._updatedAt||0)>lastSyncedAt)applyRemote(remote);
+    if(window.fbSubscribe)window.fbSubscribe(remote=>{
+      if((remote._updatedAt||0)>lastSyncedAt)applyRemote(remote);
+    });
+  });
+}
+
+let data=[...D],nid=300,cv='duration',sf=new Set(),cy=2026,cm=7;
+let sortCol=null,sortDir=1;
+let siteInfo={},siteMemo={},siteAdvE={},siteGrE={};
+const TY=new Date().getFullYear();
+let selYear=TY;
+
+// 저장된 데이터가 있으면 불러오기, 없으면 초기데이터 사용
+if(!loadAll()){
+  // 2025-1차
+  const s25_1=['기미전자','건천중앙교회','보성열처리','케이에스엠','영진기업'];
+  s25_1.forEach((s,i)=>{siteInfo[s]={num:'2025-1-'+String(i+1).padStart(2,'0'),round:1,year:2025};});
+  // 2025-2차
+  const s25_2=['미소찬'];
+  s25_2.forEach((s,i)=>{siteInfo[s]={num:'2025-2-'+String(i+1).padStart(2,'0'),round:2,year:2025};});
+  // 2026-1차
+  const s26_1=[...new Set(data.filter(d=>d.date.startsWith('2026')&&!['기미전자','건천중앙교회','보성열처리','케이에스엠','영진기업','미소찬'].includes(d.site)).map(d=>d.site))];
+  s26_1.forEach((s,i)=>{if(!siteInfo[s])siteInfo[s]={num:'2026-1-'+String(i+1).padStart(2,'0'),round:1,year:2026};});
+}
+function getYears(){const yrs=new Set();Object.values(siteInfo).forEach(v=>{if(v.year)yrs.add(v.year);});data.forEach(d=>{const y=parseInt(d.date);if(y)yrs.add(y);});if(!yrs.size)yrs.add(TY);return[...yrs].sort();}
+const WD=['일','월','화','수','목','금','토'],MS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const dB=(a,b)=>(!a||!b)?null:Math.round((new Date(b)-new Date(a))/86400000);
+const TYPES=['신청서 제출','신청서 검토','사업계획서 검토신청','착공여부 검토신청','선급금 신청','선급금 지급','보조금 지급'];
+
+function calcS(items){
+  const s=[...items].sort((a,b)=>a.date.localeCompare(b.date));
+  const sub=s.find(i=>i.type==='신청서 제출');
+  const bow=s.find(i=>i.result==='보완요청');
+  const adeq=[...s].reverse().find(i=>i.result==='적합'&&i.type==='신청서 검토');
+  const bc=s.filter(i=>i.result==='보완요청').length;
+  const pp=[...s].reverse().find(i=>i.type==='사업계획서 검토신청'&&i.result==='적합');
+  const cgp=[...s].reverse().find(i=>i.type==='착공여부 검토신청'&&i.result==='적합');
+  const apReq=s.find(i=>i.type==='선급금 신청');
+  const apOk=[...s].reverse().find(i=>i.type==='선급금 신청'&&i.result==='적합');
+  const apPay=s.find(i=>i.type==='선급금 지급');
+  const grant=s.find(i=>i.type==='보조금 지급');
+  let stage='신청서 제출',sc='#9C9488';
+  if(grant){stage='보조금 지급';sc='#5B2C82';}
+  else if(apPay){stage='선급금 지급';sc='#7C4DA6';}
+  else if(apOk){stage='선급금 적합';sc='#0B6B63';}
+  else if(apReq){stage='선급금 신청';sc='#0E7490';}
+  else if(cgp){stage='착공검토 적합';sc='#1B4B4A';}
+  else if(pp){stage='사업계획 적합';sc='#1F7A5C';}
+  else if(s.find(i=>i.type==='사업계획서 검토신청')){stage='사업계획 검토중';sc='#2E6E92';}
+  else if(adeq){stage='신청서 적합';sc='#2F8F5B';}
+  else if(bow){stage='보완 진행중';sc='#9C6414';}
+  let advSt='-',grantSt='-';
+  if(apPay)advSt='지급';else if(apOk)advSt='적합';else if(apReq)advSt='신청';
+  if(grant)grantSt='지급';
+  return{subDate:sub?.date,bowDate:bow?.date,adeqDate:adeq?.date,s2b:dB(sub?.date,bow?.date),s2a:dB(sub?.date,adeq?.date),bc,stage,sc,advSt,grantSt};
+}
+function bc2(r){return r==='적합'?'b-pass':r==='보완요청'?'b-fix':r==='반려'?'b-rej':'b-sub'}
+function cc2(r){return r==='적합'?'cp':r==='보완요청'?'cf':r==='반려'?'cr':''}
+function bl(r){return r||'제출/신청'}
+function gf(){
+  let d=[...data];
+  // Filter by selected year (sites belonging to selYear)
+  const yrSites=new Set(Object.entries(siteInfo).filter(([_,v])=>v.year===selYear).map(([k])=>k));
+  if(yrSites.size>0)d=d.filter(i=>yrSites.has(i.site));
+  if(sf.size>0)d=d.filter(i=>sf.has(i.site));
+  return d.sort((a,b)=>a.date.localeCompare(b.date));
+}
+function gs(){return['전체',...[...new Set(data.filter(i=>{const inf=siteInfo[i.site];return inf&&inf.year===selYear;}).map(d=>d.site))].sort()];}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function shortType(t){
+  const m={'신청서 제출':'제출','신청서 검토':'검토','사업계획서 검토신청':'사업계획','착공여부 검토신청':'착공검토','선급금 신청':'선급신청','선급금 지급':'선급지급','보조금 지급':'보조지급'};
+  return m[t]||t;
+}
+
+function parseImp(text){
+  const lines=text.split('\n');let site='',items=[],cur=null;
+  const dr=/^(\d{4}-\d{2}-\d{2})\s*/;
+  for(let i=0;i<lines.length;i++){
+    const lt=lines[i].trim();if(!lt)continue;
+    if(dr.test(lt)){
+      if(cur)items.push(cur);
+      const p=lines[i].split('\t').map(x=>x.trim());
+      cur={date:p[0]||'',type:p[1]||'',result:p[2]||'',detail:''};
+    }else if(cur){cur.detail=cur.detail?(cur.detail+'\n'+lt):lt;}
+    else if(!site){site=lt;}
+  }
+  if(cur)items.push(cur);
+  items.forEach(it=>{
+    it.detail=(it.detail||'').replace(/^ㅇ\s*/gm,'').trim();
+    if(!it.type&&it.detail){
+      if(it.detail.includes('선급금 지급'))it.type='선급금 지급';
+      else if(it.detail.includes('보조금 지급'))it.type='보조금 지급';
+      else if(it.detail.includes('선급금 신청'))it.type='선급금 신청';
+    }
+    if(!it.type)it.type='신청서 제출';
+    if(!it.detail)it.detail=it.type;
+  });
+  return{site,items};
+}
+
+function render(){
+  const fl=gf(),sites=gs();
+  const years=getYears();
+  // Stats for selected year only
+  const allS=[...new Set(data.map(d=>d.site))];
+  const r1s=new Set(),r1p=new Set(),r2s=new Set(),r2p=new Set();
+  allS.forEach(s=>{
+    const inf=siteInfo[s]||{round:1,year:selYear};
+    if(inf.year!==selYear)return;
+    const passed=data.some(d=>d.site===s&&d.result==='적합'&&d.type==='신청서 검토');
+    if(inf.round===1){r1s.add(s);if(passed)r1p.add(s);}else{r2s.add(s);if(passed)r2p.add(s);}
+  });
+  const yrTabs=years.map(y=>'<button onclick="chgYear('+y+')" style="padding:4px 14px;border:none;border-radius:16px;font-size:20px;cursor:pointer;font-family:inherit;font-weight:'+(y===selYear?'700':'400')+';background:'+(y===selYear?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.08)')+';color:#fff;margin-right:6px">'+y+'년</button>').join('');
+  let h=`<div class="header"><h1>건물지원사업 진행현황</h1>
+  <div style="margin:6px 0 10px;display:flex;align-items:center;gap:4px">${yrTabs}</div>
+  <div class="stat-row">
+    <div class="stat-grp"><div class="stat-grp-title">${selYear}-1차</div><div class="stat-inner"><div class="stat-card"><div class="stat-val">${r1s.size}</div><div class="stat-lbl">전체현장</div></div><div class="stat-card"><div class="stat-val">${r1p.size}</div><div class="stat-lbl">적합완료</div></div></div></div>
+    <div class="stat-grp"><div class="stat-grp-title">${selYear}-2차</div><div class="stat-inner"><div class="stat-card"><div class="stat-val">${r2s.size}</div><div class="stat-lbl">전체현장</div></div><div class="stat-card"><div class="stat-val">${r2p.size}</div><div class="stat-lbl">적합완료</div></div></div></div>
+  </div></div>
+  <div class="tabs">
+    <button class="tab ${cv==='duration'?'active':''}" onclick="sv('duration')">소요기간</button>
+    <button class="tab ${cv==='calendar'?'active':''}" onclick="sv('calendar')">달력</button>
+    <button class="tab ${cv==='site'?'active':''}" onclick="sv('site')">현장별</button>
+    <button class="tab ${cv==='date'?'active':''}" onclick="sv('date')">날짜별</button>
+  </div>
+  <div class="toolbar">
+    <div class="tb-grp">
+      <button class="btn btn-i" onclick="showImp()">📋 데이터 입력</button>
+      <button class="btn btn-p" onclick="showAdd()">+ 추가</button>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-inp" id="searchInp" placeholder="${sf.size?sf.size+'개 선택됨 — 추가 검색...':'현장 검색 (복수 선택 가능)'}" value="" oninput="onSearch(this.value)" onfocus="openSearch()" autocomplete="off">
+      <div class="search-drop" id="searchDrop"></div>
+    </div>
+    <button class="btn btn-s" onclick="clearFilter()" style="${sf.size?'':'display:none'}">초기화</button>
+    <div class="tb-sep"></div>
+    <div class="tb-grp">
+      <button class="btn btn-icon btn-bk" onclick="exportData()" title="데이터 백업">💾 백업</button>
+      <button class="btn btn-icon btn-rs" onclick="importBackup()" title="백업 복원">📂 복원</button>
+    </div>
+  </div>
+  <div class="chips" id="chipArea">${[...sf].map(s=>'<span class="chip" onclick="removeSite(\''+s.replace(/'/g,"\\'")+'\')">'+s+'<span class="cx">✕</span></span>').join('')}</div>
+  <div class="content" id="ct">${rv(fl)}</div>`;
+  document.getElementById('app').innerHTML=h;
+  if(cv==='calendar'){fixCalH();scrollCalToCenter();}
+}
+
+function rv(fl){
+  if(cv==='duration')return rDur(fl);if(cv==='calendar')return rCal(fl);
+  if(cv==='site')return rSite(fl);if(cv==='date')return rDate(fl);
+}
+
+function fixCalH(){
+  const ct=document.getElementById('ct');if(!ct)return;
+  const grids=ct.querySelectorAll('.cal-grid');if(!grids.length)return;
+  const top=grids[0].getBoundingClientRect().top;
+  const avail=window.innerHeight-top-16;
+  // find max rows across both months (excluding header row)
+  let maxRows=0;
+  grids.forEach(g=>{
+    const totalCells=g.querySelectorAll('.cal-c').length;
+    const rows=Math.ceil(totalCells/7);
+    if(rows>maxRows)maxRows=rows;
+  });
+  if(!maxRows)maxRows=5;
+  const rowH=Math.max(50,Math.floor(avail/maxRows));
+  // set grid-template-rows on each grid so all rows are equal
+  grids.forEach(g=>{
+    g.style.gridTemplateRows='auto repeat('+maxRows+','+rowH+'px)';
+    // pad extra empty cells if this month has fewer rows
+    const totalCells=g.querySelectorAll('.cal-c').length;
+    const rows=Math.ceil(totalCells/7);
+    const need=maxRows*7-totalCells;
+    for(let i=0;i<need;i++){const d=document.createElement('div');d.className='cal-c empty';g.appendChild(d);}
+  });
+}
+
+function rDur(fl){
+  const sm={};fl.forEach(i=>{if(!sm[i.site])sm[i.site]=[];sm[i.site].push(i);});
+  let rows=Object.entries(sm).map(([site,items])=>{
+    const inf=siteInfo[site]||{num:'',round:1};
+    return{site,num:inf.num,round:inf.round,...calcS(items)};
+  });
+  if(sortCol){rows.sort((a,b)=>{let va=a[sortCol]??9999,vb=b[sortCol]??9999;if(typeof va==='number')return(va-vb)*sortDir;return String(va).localeCompare(String(vb))*sortDir;});}
+  else{rows.sort((a,b)=>(a.num||'z').localeCompare(b.num||'z'));}
+  const vals=(k)=>rows.map(r=>r[k]).filter(v=>v!==null);
+  const mm=a=>a.length?{min:Math.min(...a),max:Math.max(...a)}:null;
+  const s2bR=mm(vals('s2b')),s2aR=mm(vals('s2a'));
+  const sa=c=>`onclick="doSort('${c}')"`;
+  const ar=c=>sortCol===c?(sortDir>0?' ▲':' ▼'):'';
+  let h=`<div class="dur-cards">
+    <div class="dur-card dc-b"><div class="dl">제출 → 보완</div><div class="dv">${s2bR?s2bR.min+'일 ~ '+s2bR.max+'일':'-'}</div></div>
+    <div class="dur-card dc-p"><div class="dl">제출 → 적합</div><div class="dv">${s2aR?s2aR.min+'일 ~ '+s2aR.max+'일':'-'}</div></div>
+  </div><div class="dt-wrap"><table class="dt"><thead><tr>
+    <th ${sa('num')}>번호${ar('num')}</th>
+    <th ${sa('site')} style="text-align:center">현장${ar('site')}</th>
+    <th ${sa('subDate')}>최초제출${ar('subDate')}</th>
+    <th ${sa('s2b')}>제출→보완${ar('s2b')}</th>
+    <th ${sa('s2a')}>제출→적합${ar('s2a')}</th>
+    <th ${sa('bc')}>보완횟수${ar('bc')}</th>
+    <th ${sa('stage')}>현재단계${ar('stage')}</th>
+    <th ${sa('advSt')}>선급금BPM${ar('advSt')}</th>
+    <th>선급금E</th>
+    <th ${sa('grantSt')}>보조금BPM${ar('grantSt')}</th>
+    <th>보조금E</th>
+  </tr></thead><tbody>`;
+  rows.forEach(r=>{
+    const advC=r.advSt==='지급'?'#7C4DA6':r.advSt==='적합'?'#2F8F5B':r.advSt==='신청'?'#2E6E92':'#C9C2B5';
+    const grC=r.grantSt==='지급'?'#7C4DA6':'#C9C2B5';
+    const memo=siteMemo[r.site]||'';
+    const advE=siteAdvE[r.site]||'';
+    const grE=siteGrE[r.site]||'';
+    h+=`<tr>
+      <td><input class="num-edit" value="${esc(r.num)}" onchange="chgNum('${esc(r.site)}',this.value)"></td>
+      <td style="padding-left:8px;font-weight:600" ondblclick="openMemo(this,'${esc(r.site)}')">
+        <div style="display:flex;align-items:center;gap:4px">
+          <span>${r.site}</span>
+          <span class="memo-cell ${memo?'has':''}" id="mc-${esc(r.site)}">${memo?esc(memo):''}</span>
+        </div>
+        <input class="memo-inp" id="mi-${esc(r.site)}" value="${esc(memo)}" onblur="closeMemo('${esc(r.site)}',this)" onkeydown="if(event.key==='Enter')this.blur()">
+      </td>
+      <td style="color:#6B6459">${r.subDate||'-'}</td>
+      <td>${r.s2b!==null?`<b style="color:${r.s2b>30?'#B23A2A':'#9C6414'}">${r.s2b}일</b>`:'-'}</td>
+      <td>${r.s2a!==null?`<b style="color:${r.s2a>40?'#B23A2A':'#2F8F5B'}">${r.s2a}일</b>`:'-'}</td>
+      <td>${r.bc>0?`<b style="color:${r.bc>=3?'#B23A2A':'#9C6414'}">${r.bc}회</b>`:'<span style="color:#C9C2B5">0</span>'}</td>
+      <td><span class="stg" style="background:${r.sc}18;color:${r.sc}">${r.stage}</span></td>
+      <td><span style="color:${advC};font-weight:600">${r.advSt}</span></td>
+      <td ondblclick="openE(this,'advE','${esc(r.site)}')"><span class="memo-cell ${advE?'has':''}" id="mc-advE-${esc(r.site)}">${advE?esc(advE):''}</span><input class="memo-inp" id="mi-advE-${esc(r.site)}" value="${esc(advE)}" onblur="closeE('advE','${esc(r.site)}',this)" onkeydown="if(event.key==='Enter')this.blur()"></td>
+      <td><span style="color:${grC};font-weight:600">${r.grantSt}</span></td>
+      <td ondblclick="openE(this,'grE','${esc(r.site)}')"><span class="memo-cell ${grE?'has':''}" id="mc-grE-${esc(r.site)}">${grE?esc(grE):''}</span><input class="memo-inp" id="mi-grE-${esc(r.site)}" value="${esc(grE)}" onblur="closeE('grE','${esc(r.site)}',this)" onkeydown="if(event.key==='Enter')this.blur()"></td>
+    </tr>`;
+  });
+  h+='</tbody></table></div>';return h;
+}
+
+function rCal(fl){
+  // render 4 months: cm-1, cm, cm+1, cm+2
+  const months=[];
+  for(let i=-1;i<=2;i++){
+    let mm=cm+i,yy=cy;
+    while(mm<0){mm+=12;yy--;}
+    while(mm>11){mm-=12;yy++;}
+    months.push({y:yy,m:mm});
+  }
+  let h=`<div class="cal-nav">
+    <button class="btn btn-s" onclick="cp()">◀</button>
+    <span class="cal-title">${cy}년 ${MS[cm]}</span>
+    <button class="btn btn-s" onclick="cn()">▶</button>
+  </div><div class="cal-scroll" id="cal-sc"><div class="cal-wrap">`;
+  months.forEach(({y,m})=>{h+=rMon(y,m,fl);});
+  h+='</div></div>';
+  return h;
+}
+
+function scrollCalToCenter(){
+  const sc=document.getElementById('cal-sc');if(!sc)return;
+  const halves=sc.querySelectorAll('.cal-half');
+  if(halves.length>=2){
+    const target=halves[1];
+    sc.scrollLeft=target.offsetLeft-8;
+  }
+}
+
+function rMon(y,m,fl){
+  const fd=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();
+  let cells=[];for(let i=0;i<fd;i++)cells.push(null);for(let d=1;d<=dim;d++)cells.push(d);
+  // pad to complete last row
+  while(cells.length%7!==0)cells.push(null);
+  const hol=getHol(y,m);
+  let h=`<div class="cal-half"><div style="text-align:center;font-weight:700;font-size:23px;margin-bottom:6px;color:#1B4B4A">${y}년 ${MS[m]}</div>
+  <div class="cal-grid">`;
+  WD.forEach(d=>{h+=`<div class="cal-dh" style="color:${d==='일'?'#B23A2A':d==='토'?'#1B4B4A':'#6B6459'}">${d}</div>`;});
+  cells.forEach((day,i)=>{
+    if(day===null){h+=`<div class="cal-c empty"></div>`;return;}
+    const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    const evts=fl.filter(x=>x.date===ds);
+    const dow=i%7;const nc=dow===0?'#B23A2A':dow===6?'#1B4B4A':'#4A443C';
+    const hn=hol[day];
+    h+=`<div class="cal-c"><div class="cal-n" style="color:${hn?'#B23A2A':nc}">${day}${hn?`<span class="holiday">${hn}</span>`:''}</div>`;
+    evts.slice(0,4).forEach(ev=>{
+      const bg=ev.result==='적합'?'#E3F3E9':ev.result==='보완요청'?'#FBF0DC':ev.result==='반려'?'#FAE4E1':'#E4F0F6';
+      const tx=ev.result==='적합'?'#2F8F5B':ev.result==='보완요청'?'#9C6414':ev.result==='반려'?'#B23A2A':'#2E6E92';
+      const st=shortType(ev.type);
+      const rs=ev.result?(' '+ev.result):'';
+      h+='<div class="cal-ev" style="background:'+bg+';color:'+tx+'" onclick="showEdit('+ev.id+')">'+ev.site+' '+st+rs+'<\/div>';
+    });
+    if(evts.length>4)h+='<div style="font-size:23px;color:#9C9488">+'+String(evts.length-4)+'<\/div>';
+    h+='<\/div>';
+  });
+  h+='</div></div>';return h;
+}
+
+function getHol(y,m){
+  const h={};
+  const f={0:{1:'신정'},2:{1:'삼일절'},4:{5:'어린이날'},5:{6:'현충일'},7:{15:'광복절'},9:{3:'개천절',9:'한글날'},11:{25:'성탄절'}};
+  if(f[m])Object.entries(f[m]).forEach(([d,n])=>{h[parseInt(d)]=n;});
+  if(y===2026&&m===8){h[24]='추석연휴';h[25]='추석';h[26]='추석연휴';}
+  if(y===2026&&m===1){h[16]='설연휴';h[17]='설날';h[18]='설연휴';}
+  if(y===2026&&m===4){h[24]='석가탄신일';}
+  if(y===2026&&m===7){h[17]='임시공휴일';}
+  return h;
+}
+
+function rSite(fl){
+  const sm={};fl.forEach(i=>{if(!sm[i.site])sm[i.site]=[];sm[i.site].push(i);});
+  let h='';Object.entries(sm).forEach(([site,items])=>{
+    items.sort((a,b)=>a.date.localeCompare(b.date));const st=calcS(items);
+    h+=`<div class="sec"><div class="sec-hdr"><div><span class="sec-name">${site}</span><span class="stg" style="background:${st.sc}18;color:${st.sc};margin-left:8px">${st.stage}</span></div><span style="font-size:20px;color:#9C9488">${items.length}건</span></div>
+    <div class="sec-dur">${st.s2b!==null?`<span>제출→보완 <b style="color:#9C6414">${st.s2b}일</b></span>`:''}${st.s2a!==null?`<span>제출→적합 <b style="color:#2F8F5B">${st.s2a}일</b></span>`:''}${st.bc>0?`<span>보완 <b style="color:#9C6414">${st.bc}회</b></span>`:''}</div>`;
+    items.forEach(it=>{h+=rCard(it);});h+='</div>';
+  });return h;
+}
+
+function rDate(fl){
+  const dm={};fl.forEach(i=>{if(!dm[i.date])dm[i.date]=[];dm[i.date].push(i);});
+  let h='';Object.entries(dm).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,items])=>{
+    h+=`<div class="sec"><div class="sec-hdr"><span>${date} (${WD[new Date(date).getDay()]})</span><span style="font-size:20px;color:#9C9488">${items.length}건</span></div>`;
+    items.forEach(it=>{h+=rCard(it);});h+='</div>';
+  });return h;
+}
+
+function rCard(it){
+  const short=['적합','신청서 제출','검토완료','사업계획서 검토신청','선급금 신청','선급금 지급','보조금 지급'];
+  const sd=it.detail&&!short.includes(it.detail);
+  return`<div class="card ${cc2(it.result)}" onclick="showEdit(${it.id})">
+    <div class="card-top"><span class="card-date">${it.date}</span><span class="badge ${bc2(it.result)}">${bl(it.result)}</span></div>
+    <div class="card-site">${it.site}</div><div class="card-type">${it.type}</div>
+    ${sd?`<div class="card-detail">${esc(it.detail)}</div>`:''}
+  </div>`;
+}
+
+window.sv=v=>{cv=v;render();};
+window.chgYear=y=>{selYear=y;sf.clear();render();};
+window.ff=v=>{sf=new Set([v]);render();};
+window.onSearch=v=>{
+  const drop=document.getElementById('searchDrop');
+  const sites=gs();
+  const q=v.trim().toLowerCase();
+  const filtered=q?sites.filter(s=>s.toLowerCase().includes(q)):sites;
+  drop.innerHTML=filtered.map(s=>{
+    const sel=s==='전체'?sf.size===0:sf.has(s);
+    return '<div class="search-item'+(sel?' sel':'')+'" onclick="pickSite(\''+s.replace(/'/g,"\\'")+'\')">'+
+      (sel?'✓ ':'')+s+'</div>';
+  }).join('');
+  drop.classList.add('open');
+};
+window.openSearch=()=>{onSearch(document.getElementById('searchInp').value);};
+window.pickSite=s=>{
+  if(s==='전체'){sf.clear();}
+  else{if(sf.has(s))sf.delete(s);else sf.add(s);}
+  document.getElementById('searchInp').value='';
+  render();
+  setTimeout(()=>{const inp=document.getElementById('searchInp');if(inp){inp.focus();openSearch();}},50);
+};
+window.removeSite=s=>{sf.delete(s);render();};
+window.clearFilter=()=>{sf.clear();render();};
+document.addEventListener('click',e=>{
+  const w=document.querySelector('.search-wrap');
+  if(w&&!w.contains(e.target)){const d=document.getElementById('searchDrop');if(d)d.classList.remove('open');}
+});
+window.cp=()=>{if(cm===0){cy--;cm=11;}else cm--;render();};
+window.cn=()=>{if(cm===11){cy++;cm=0;}else cm++;render();};
+window.doSort=c=>{if(sortCol===c)sortDir*=-1;else{sortCol=c;sortDir=1;}render();};
+window.chgNum=(s,v)=>{if(!siteInfo[s])siteInfo[s]={num:v,round:1,year:selYear};else siteInfo[s].num=v;saveAll();};
+window.chgMemo=(s,v)=>{siteMemo[s]=v;saveAll();};
+window.openMemo=(td,s)=>{
+  const inp=document.getElementById('mi-'+s);if(!inp)return;
+  const cell=document.getElementById('mc-'+s);if(cell)cell.style.display='none';
+  inp.classList.add('show');inp.focus();
+};
+window.closeMemo=(s,inp)=>{
+  siteMemo[s]=inp.value;inp.classList.remove('show');
+  const cell=document.getElementById('mc-'+s);
+  if(cell){cell.style.display='';cell.textContent=inp.value;cell.className='memo-cell'+(inp.value?' has':'');}
+  saveAll();
+};
+window.openE=(td,key,s)=>{
+  const inp=document.getElementById('mi-'+key+'-'+s);if(!inp)return;
+  const cell=document.getElementById('mc-'+key+'-'+s);if(cell)cell.style.display='none';
+  inp.classList.add('show');inp.focus();
+};
+window.closeE=(key,s,inp)=>{
+  if(key==='advE')siteAdvE[s]=inp.value;else siteGrE[s]=inp.value;
+  inp.classList.remove('show');
+  const cell=document.getElementById('mc-'+key+'-'+s);
+  if(cell){cell.style.display='';cell.textContent=inp.value;cell.className='memo-cell'+(inp.value?' has':'');}
+  saveAll();
+};
+
+window.showEdit=id=>{
+  const it=data.find(d=>d.id===id);if(!it)return;
+  const inf=siteInfo[it.site]||{round:1,year:selYear};
+  const ov=document.createElement('div');ov.className='ov';ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="modal"><h3>항목 수정</h3>
+    <label>현장명<input id="es" value="${it.site}"></label>
+    <label>연도<input type="number" id="ey" value="${inf.year||selYear}" min="2020" max="2040" style="width:120px"></label>
+    <label>차수<select id="er"><option value="1" ${inf.round===1?'selected':''}>1차</option><option value="2" ${inf.round===2?'selected':''}>2차</option></select></label>
+    <label>날짜<input type="date" id="ed" value="${it.date}"></label>
+    <label>항목<select id="et">${TYPES.map(t=>`<option ${it.type===t?'selected':''}>${t}</option>`).join('')}</select></label>
+    <label>결과<select id="ek"><option value="">없음</option><option value="적합" ${it.result==='적합'?'selected':''}>적합</option><option value="보완요청" ${it.result==='보완요청'?'selected':''}>보완요청</option><option value="반려" ${it.result==='반려'?'selected':''}>반려</option></select></label>
+    <label>내역<textarea id="ei" rows="3">${esc(it.detail)}</textarea></label>
+    <div class="ma"><button class="btn btn-d" onclick="delI(${id})">삭제</button><div style="display:flex;gap:6px"><button class="btn btn-c" onclick="this.closest('.ov').remove()">취소</button><button class="btn btn-sv" onclick="saveI(${id})">저장</button></div></div></div>`;
+  document.body.appendChild(ov);
+};
+window.saveI=id=>{
+  const it=data.find(d=>d.id===id);const ns=document.getElementById('es').value;
+  if(ns!==it.site&&siteInfo[it.site]){siteInfo[ns]=siteInfo[it.site];}
+  it.site=ns;it.date=document.getElementById('ed').value;it.type=document.getElementById('et').value;it.result=document.getElementById('ek').value;it.detail=document.getElementById('ei').value;
+  const rnd=parseInt(document.getElementById('er').value);
+  const yr=parseInt(document.getElementById('ey').value)||selYear;
+  if(!siteInfo[ns])siteInfo[ns]={num:'',round:rnd,year:yr};else{siteInfo[ns].round=rnd;siteInfo[ns].year=yr;}
+  document.querySelector('.ov').remove();saveAll();render();
+};
+window.delI=id=>{if(!confirm('삭제?'))return;data=data.filter(d=>d.id!==id);document.querySelector('.ov').remove();saveAll();render();};
+
+window.showAdd=()=>{
+  const ov=document.createElement('div');ov.className='ov';ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="modal"><h3>새 항목 추가</h3>
+    <label>현장명<input id="es" value="${sf.size===1?[...sf][0]:''}"></label>
+    <label>연도<input type="number" id="ey" value="${selYear}" min="2020" max="2040" style="width:120px"></label>
+    <label>차수<select id="er"><option value="1">1차</option><option value="2">2차</option></select></label>
+    <label>날짜<input type="date" id="ed" value="${new Date().toISOString().slice(0,10)}"></label>
+    <label>항목<select id="et">${TYPES.map(t=>`<option>${t}</option>`).join('')}</select></label>
+    <label>결과<select id="ek"><option value="">없음</option><option value="적합">적합</option><option value="보완요청">보완요청</option><option value="반려">반려</option></select></label>
+    <label>내역<textarea id="ei" rows="3"></textarea></label>
+    <div class="ma"><div></div><div style="display:flex;gap:6px"><button class="btn btn-c" onclick="this.closest('.ov').remove()">취소</button><button class="btn btn-sv" onclick="addI()">추가</button></div></div></div>`;
+  document.body.appendChild(ov);
+};
+window.addI=()=>{
+  const s=document.getElementById('es').value.trim();if(!s){alert('현장명 입력');return;}
+  const rnd=parseInt(document.getElementById('er').value);
+  const yr=parseInt(document.getElementById('ey').value)||selYear;
+  data.push({id:nid++,site:s,date:document.getElementById('ed').value,type:document.getElementById('et').value,result:document.getElementById('ek').value,detail:document.getElementById('ei').value||document.getElementById('et').value});
+  if(!siteInfo[s]){const rndSites=Object.values(siteInfo).filter(x=>x.round===rnd&&x.year===yr).length+1;siteInfo[s]={num:yr+'-'+rnd+'-'+String(rndSites).padStart(2,'0'),round:rnd,year:yr};}else{siteInfo[s].round=rnd;siteInfo[s].year=yr;}
+  selYear=yr;
+  document.querySelector('.ov').remove();saveAll();render();
+};
+
+window.showImp=()=>{
+  const ov=document.createElement('div');ov.className='ov';ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="modal"><h3>데이터 입력 (붙여넣기)</h3>
+    <p class="imp-hint"><b>형식:</b> 첫 줄에 현장명, 이후 줄에 날짜(탭)항목(탭)결과 + 다음줄 내역<br><br>
+    <b>예시:</b><br>
+    <code style="background:#FAF8F4;padding:6px 10px;display:block;border-radius:6px;font-size:20px;line-height:1.8;color:#4A443C">진양<br>2026-08-03&nbsp;&nbsp;&nbsp;선급금 신청&nbsp;&nbsp;&nbsp;적합<br>적합</code></p>
+    <label>연도<input type="number" id="imp-y" value="${selYear}" min="2020" max="2040" style="width:120px"></label>
+    <label>차수<select id="imp-r"><option value="1">1차</option><option value="2">2차</option></select></label>
+    <textarea class="imp-area" id="imp-t" placeholder="진양&#10;2026-08-03&#9;선급금 신청&#9;적합&#9;&#10;적합"></textarea>
+    <div id="imp-pv"></div>
+    <div class="ma"><div></div><div style="display:flex;gap:6px"><button class="btn" style="background:#FCE9E1;color:#B85128" onclick="pvImp()">미리보기</button><button class="btn btn-sv" onclick="doImp()">등록</button></div></div></div>`;
+  document.body.appendChild(ov);
+};
+window.pvImp=()=>{
+  const{site,items}=parseImp(document.getElementById('imp-t').value);
+  const pv=document.getElementById('imp-pv');
+  if(!site&&!items.length){pv.innerHTML='<div class="imp-pv" style="color:#B23A2A">결과 없음</div>';return;}
+  const ex=data.filter(d=>d.site===site);
+  let h=`<div class="imp-pv"><b>${site||'(미입력)'}</b> — ${items.length}건<br>`;
+  items.forEach(it=>{
+    const dup=ex.some(e=>e.date===it.date&&e.type===it.type&&e.result===it.result);
+    h+=`<span style="color:${dup?'#B23A2A':'#4A443C'}">${dup?'[중복] ':''}${it.date} | ${it.type} | ${bl(it.result)}</span><br>`;
+  });h+='</div>';pv.innerHTML=h;
+};
+window.doImp=()=>{
+  const{site,items}=parseImp(document.getElementById('imp-t').value);
+  if(!site){alert('현장명(첫 줄) 입력');return;}
+  if(!items.length){alert('항목 없음');return;}
+  const rnd=parseInt(document.getElementById('imp-r').value);
+  const ex=data.filter(d=>d.site===site);let added=0;
+  items.forEach(it=>{
+    if(!ex.some(e=>e.date===it.date&&e.type===it.type&&e.result===it.result)){
+      data.push({id:nid++,site,date:it.date,type:it.type,result:it.result,detail:it.detail||it.type});added++;
+    }
+  });
+  const yr=parseInt(document.getElementById('imp-y').value)||selYear;
+  if(!siteInfo[site]){const rndSites=Object.values(siteInfo).filter(x=>x.round===rnd&&x.year===yr).length+1;siteInfo[site]={num:yr+'-'+rnd+'-'+String(rndSites).padStart(2,'0'),round:rnd,year:yr};}else{siteInfo[site].round=rnd;siteInfo[site].year=yr;}
+  selYear=yr;
+  document.querySelector('.ov').remove();saveAll();render();
+  alert(site+' — '+added+'건 등록'+(items.length-added>0?' (중복 '+(items.length-added)+'건 제외)':''));
+};
+
+window.addEventListener('resize',()=>{if(cv==='calendar'){fixCalH();scrollCalToCenter();}});
+
+// ── 데이터 백업/복원 ──
+window.exportData=()=>{
+  const blob=new Blob([JSON.stringify({data,nid,siteInfo,siteMemo,siteAdvE,siteGrE,selYear},null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const d=new Date();
+  a.download='건물지원사업_백업_'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.json';
+  a.click();URL.revokeObjectURL(a.href);
+};
+
+window.importBackup=()=>{
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='.json';
+  inp.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const o=JSON.parse(ev.target.result);
+        if(!o.data||!o.data.length){alert('유효하지 않은 백업 파일');return;}
+        if(!confirm('현재 데이터를 백업 파일로 교체합니다. 진행할까요?'))return;
+        data=o.data;nid=o.nid||200;siteInfo=o.siteInfo||{};siteMemo=o.siteMemo||{};siteAdvE=o.siteAdvE||{};siteGrE=o.siteGrE||{};selYear=o.selYear||TY;
+        saveAll();render();
+        alert('복원 완료! ('+data.length+'건)');
+      }catch(err){alert('파일 읽기 오류: '+err.message);}
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+};
+
+// 페이지 닫기 전 자동 저장
+window.addEventListener('beforeunload',()=>{saveAll();});
+
+render();
+// fb-ready(모듈 스크립트 준비 완료) 이후 클라우드 동기화 시작 — 이미 준비됐다면 즉시 실행
+if(window.fbGetOnce)initCloudSync();
+else window.addEventListener('fb-ready',initCloudSync,{once:true});
+</script>
+</body>
+</html>
