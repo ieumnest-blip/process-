@@ -132,6 +132,9 @@ body{background:#FAF8F4;color:#262220}
 .hx-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px}
 .hx-site{font-size:27px;font-weight:700;color:#262220;margin-right:4px}
 .hx-chip{font-size:19px;background:#F8F6F1;border:1px solid #EFE9DE;border-radius:9px;padding:3px 10px;color:#6B6459;white-space:nowrap}
+.hx-yin{font-size:18px;padding:2px 6px;border:1px solid #EFE9DE;border-radius:8px;background:#F8F6F1;color:#6B6459;width:84px;font-family:inherit}
+select.hx-yin{width:auto}
+.hx-yr{display:inline-flex;gap:4px}
 .hx-del{margin-left:auto;border:none;background:none;color:#C9C2B5;font-size:19px;cursor:pointer;font-family:inherit}
 .hx-del:hover{color:#B23A2A}
 .hx-fix-t{font-weight:700;color:#B23A2A;font-size:21px;margin-bottom:4px}
@@ -543,11 +546,13 @@ function parseHist(text,defName){
   });
   return out;
 }
-function addHist(kind,parsed){
+function addHist(kind,parsed,year,round){
   let newSites=0,newItems=0,updItems=0;
   parsed.forEach(p=>{
-    let rec=hist[kind].find(r=>r.site===p.site);
-    if(!rec){rec={id:histNid++,site:p.site,items:[]};hist[kind].push(rec);newSites++;}
+    let rec=hist[kind].find(r=>r.site===p.site&&r.year===year&&r.round===round);
+    if(!rec)rec=hist[kind].find(r=>r.site===p.site&&(r.year==null||r.round==null)); // 연도·차수 미지정 기존 건은 이어받음
+    if(!rec){rec={id:histNid++,site:p.site,year,round,items:[]};hist[kind].push(rec);newSites++;}
+    rec.year=year;rec.round=round;
     p.items.forEach(it=>{
       const k=rec.items.findIndex(e=>e.no===it.no);
       if(k>=0){rec.items[k]=it;updItems++;}else{rec.items.push(it);newItems++;}
@@ -556,12 +561,16 @@ function addHist(kind,parsed){
   });
   return{newSites,newItems,updItems};
 }
+// 상단 연도/차수 선택에 맞는 건만 표시 (연도·차수 미지정 건은 항상 표시)
+function histVisible(kind){return hist[kind].filter(r=>(r.year==null||r.year===selYear)&&(selRound===0||r.round==null||r.round===selRound));}
 function histBadge(r){const c=HIST_FIX.test(r||'')?'b-fix':r==='적합'?'b-pass':'b-sub';return`<span class="badge ${c}">${esc(r)||'-'}</span>`;}
 function histCards(kind){
-  const list=[...hist[kind]];
+  const list=histVisible(kind);
   const lastOf=r=>r.items.reduce((m,i)=>i.dt>m?i.dt:m,'');
   list.sort((a,b)=>lastOf(b).localeCompare(lastOf(a)));
-  if(!list.length)return`<div class="hx-empty">등록된 처리이력이 없습니다 — '📋 처리이력 붙여넣기'로 입력하세요</div>`;
+  if(!list.length)return hist[kind].length
+    ?`<div class="hx-empty">${selYear}년${selRound?' '+selRound+'차':''}에 해당하는 처리이력이 없습니다 (다른 연도·차수에 ${hist[kind].length}건 있음)</div>`
+    :`<div class="hx-empty">등록된 처리이력이 없습니다 — '📋 처리이력 붙여넣기'로 입력하세요</div>`;
   return list.map(r=>{
     const its=[...r.items].sort((a,b)=>b.no-a.no);
     if(!its.length)return'';
@@ -572,9 +581,11 @@ function histCards(kind){
     const days=dB(firstD,lastD);
     let h=`<div class="hx-card"><div class="hx-head">
       <span class="hx-site">${esc(r.site)}</span>
+      ${r.year&&r.round?`<span class="hx-chip">${r.year}-${r.round}차</span>`:`<span class="hx-chip" style="color:#B23A2A;border-color:#F3CDBB;background:#FDF3EE">연도·차수 미지정</span>`}
       <span class="hx-chip">${esc(latest.status)}</span>${histBadge(latest.result)}
       <span class="hx-chip">최초 ${firstD}</span><span class="hx-chip">최종 ${lastD}${days!==null?` (${days}일)`:''}</span>
       <span class="hx-chip">처리 ${its.length}회</span><span class="hx-chip" style="${fixes.length?'color:#B23A2A;border-color:#F3CDBB;background:#FDF3EE':''}">보완 ${fixes.length}회</span>
+      <span class="hx-yr"><input type="number" class="hx-yin" min="2020" max="2040" value="${r.year||''}" placeholder="연도" onchange="setHistYR('${kind}',${r.id},'year',this.value)"><select class="hx-yin" onchange="setHistYR('${kind}',${r.id},'round',this.value)"><option value="">차수</option><option value="1"${r.round===1?' selected':''}>1차</option><option value="2"${r.round===2?' selected':''}>2차</option></select></span>
       <button class="hx-del" onclick="delHist('${kind}',${r.id})">✕ 삭제</button></div>`;
     h+=`<details class="hx-det" open><summary>전체 처리이력 (${its.length}건)${fixes.length?`<span class="hx-sum-fix">⚠ 보완 요청 내역 (${fixes.length}회)</span>`:`<span class="hx-sum-ok">✔ 보완 요청 없음</span>`}</summary><div class="dt-wrap"><table class="dt"><thead><tr>
       <th>NO</th><th>처리자</th><th>처리일시</th><th>상태</th><th>결과</th><th style="text-align:left">의견</th></tr></thead><tbody>`;
@@ -583,7 +594,7 @@ function histCards(kind){
   }).join('');
 }
 function rHist(kind){
-  const list=hist[kind];
+  const list=histVisible(kind);
   const withFix=list.filter(r=>r.items.some(i=>HIST_FIX.test(i.result))).length;
   const done=list.filter(r=>{const l=[...r.items].sort((a,b)=>b.no-a.no)[0];return l&&l.result==='적합';}).length;
   let h=`<div class="dur-cards">
@@ -595,6 +606,8 @@ function rHist(kind){
 window.showHistImp=kind=>{
   const ov=document.createElement('div');ov.className='ov';ov.onclick=e=>{if(e.target===ov)ov.remove();};
   ov.innerHTML=`<div class="modal" style="width:min(760px,94vw)"><h3>${HIST_LABEL[kind]} 처리이력 붙여넣기</h3>
+    <label>연도<input type="number" id="h-y" value="${selYear}" min="2020" max="2040" style="width:120px"></label>
+    <label>차수<select id="h-r"><option value="1"${selRound===1?' selected':''}>1차</option><option value="2"${selRound===2?' selected':''}>2차</option></select></label>
     <label>현장명 <span style="font-size:18px;color:#9C9488">(붙여넣은 내용 맨 위에 현장명이 없을 때만 입력)</span><input id="h-name" placeholder="예: 미소찬"></label>
     <textarea class="imp-area" id="h-t" style="min-height:260px" placeholder="미소찬&#10;보완 및 부적합 사항&#10;NO&#9;처리자&#9;처리일시&#9;상태&#9;결과&#9;의견&#10;4&#9;이인호&#9;2025-12-31 15:59:50.0&#9;현장확인&#9;적합&#10;현장확인 완료&#10;..."></textarea>
     <p class="imp-hint">현장명 줄 + "보완 및 부적합 사항" 표를 그대로 붙여넣으면 NO·처리자·처리일시·상태·결과·의견(여러 줄 포함)이 모두 입력되고, 부적합 건의 의견은 <b>보완 요청 내역</b>으로 바로 표시됩니다. 같은 현장을 다시 붙여넣으면 NO가 같은 건은 갱신됩니다. 여러 현장은 각 표 위에 현장명 한 줄씩 넣어 한꺼번에 붙여넣을 수 있습니다.</p>
@@ -618,9 +631,16 @@ window.doHistImp=kind=>{
   const parsed=parseHist(document.getElementById('h-t').value,document.getElementById('h-name').value.trim());
   if(!parsed.length){alert('인식된 처리이력이 없습니다');return;}
   if(parsed.some(p=>!p.site)){alert('현장명이 없는 표가 있습니다. 현장명을 입력해주세요');return;}
-  const r=addHist(kind,parsed);
+  const yr=parseInt(document.getElementById('h-y').value)||selYear;
+  const rd=parseInt(document.getElementById('h-r').value)||1;
+  const r=addHist(kind,parsed,yr,rd);
+  selYear=yr;if(selRound!==0)selRound=rd;
   document.querySelector('.ov').remove();saveAll();render();
   alert(`현장 ${parsed.length}곳 · 신규 ${r.newItems}건`+(r.updItems?` · 갱신 ${r.updItems}건`:'')+' 등록');
+};
+window.setHistYR=(kind,id,field,val)=>{
+  const r=hist[kind].find(x=>x.id===id);if(!r)return;
+  r[field]=val===''?null:parseInt(val);saveAll();render();
 };
 window.delHist=(kind,id)=>{
   const r=hist[kind].find(x=>x.id===id);if(!r)return;
@@ -657,8 +677,10 @@ function chgStats(rows){
   return{cnt:durs.length,avg:Math.round(sum/durs.length*10)/10,min:Math.min(...durs),max:Math.max(...durs)};
 }
 function chgDurColor(d){if(d===null)return '#9C9488';return d>14?'#B23A2A':d>7?'#9C6414':'#2F8F5B';}
+// 상단 연도/차수 선택에 맞는 변경신청만 표시 (참여년도 없는 건·차수 미지정 건은 항상 표시)
+function chgVisible(){return chgData.filter(r=>{const y=parseInt(r.year);return(isNaN(y)||y===selYear)&&(selRound===0||r.round==null||r.round===selRound);});}
 function rChg(){
-  let rows=[...chgData];
+  let rows=chgVisible();
   if(chgSortCol){
     rows.sort((a,b)=>{
       let va=chgSortCol==='dur'?dB(a.appDate,a.apprDate):a[chgSortCol];
@@ -683,6 +705,7 @@ function rChg(){
   h+=`<div class="dt-wrap"><table class="dt"><thead><tr>
     <th ${sa('mgmt')}>신청번호${ar('mgmt')}</th>
     <th ${sa('year')}>참여년도${ar('year')}</th>
+    <th ${sa('round')}>차수${ar('round')}</th>
     <th ${sa('etype')}>에너지원${ar('etype')}</th>
     <th ${sa('org')} style="text-align:left">신청기관명${ar('org')}</th>
     <th ${sa('regionCode')}>지역코드${ar('regionCode')}</th>
@@ -695,12 +718,13 @@ function rChg(){
     <th ${sa('seq')}>순번${ar('seq')}</th>
     <th style="text-align:left">변경사유</th>
   </tr></thead><tbody>`;
-  if(!rows.length)h+=`<tr><td colspan="13" style="padding:22px 0;color:#C9C2B5;font-size:19px">등록된 변경신청 이력이 없습니다 — '📋 변경이력 붙여넣기'로 데이터를 입력하세요</td></tr>`;
+  if(!rows.length)h+=`<tr><td colspan="14" style="padding:22px 0;color:#C9C2B5;font-size:19px">${chgData.length?`${selYear}년${selRound?' '+selRound+'차':''}에 해당하는 변경신청 이력이 없습니다 (다른 연도·차수에 ${chgData.length}건 있음)`:`등록된 변경신청 이력이 없습니다 — '📋 변경이력 붙여넣기'로 데이터를 입력하세요`}</td></tr>`;
   rows.forEach(r=>{
     const d=dB(r.appDate,r.apprDate);
     h+=`<tr onclick="showChgEdit(${r.id})" style="cursor:pointer">
       <td>${esc(r.mgmt)}</td>
       <td>${esc(r.year)}</td>
+      <td>${r.round?r.round+'차':'<span style="color:#C9C2B5">-</span>'}</td>
       <td>${esc(r.etype)}</td>
       <td style="padding-left:8px;text-align:left;font-weight:600">${esc(r.org)}</td>
       <td>${esc(r.regionCode)}</td>
@@ -1299,6 +1323,7 @@ window.showChgImp=()=>{
     <p class="imp-hint"><b>형식:</b> 표(엑셀 등)에서 복사한 여러 줄을 그대로 붙여넣으세요. 한 줄에 탭으로 구분된<br>
     <b>신청번호 · 참여년도 · 에너지원 · 신청기관명 · 지역코드 · 담당지사 · 변경신청번호 · 변경신청일 · 변경승인일 · 변경상태 · (순번) · 변경사유</b><br>
     순서로 인식하며, <b>변경신청일 → 변경승인일</b> 소요일수를 자동 계산합니다. 승인일이 비어있으면 '진행중'으로 표시됩니다.</p>
+    <label>차수<select id="chg-r"><option value="1"${selRound===1?' selected':''}>1차</option><option value="2"${selRound===2?' selected':''}>2차</option></select> <span style="font-size:18px;color:#9C9488">(연도는 붙여넣은 표의 참여년도를 사용)</span></label>
     <textarea class="imp-area" id="chg-t" style="min-height:220px" placeholder="202508010010&#9;2025&#9;태양광&#9;주식회사미소찬&#9;충남&#9;대전충남&#9;8543&#9;2025-11-25&#9;2025-12-02&#9;변경승인&#9;사업기간 변경 사유..."></textarea>
     <div id="chg-pv"></div>
     <div class="ma"><div></div><div style="display:flex;gap:6px"><button class="btn" style="background:#FCE9E1;color:#B85128" onclick="pvChgImp()">미리보기</button><button class="btn btn-sv" onclick="doChgImp()">등록</button></div></div></div>`;
@@ -1318,12 +1343,14 @@ window.pvChgImp=()=>{
 window.doChgImp=()=>{
   const rows=parseChg(document.getElementById('chg-t').value);
   if(!rows.length){alert('인식된 행이 없습니다');return;}
+  const rd=parseInt(document.getElementById('chg-r').value)||1;
   let added=0;
   rows.forEach(r=>{
-    if(!chgData.some(e=>e.mgmt===r.mgmt&&e.chgNo===r.chgNo&&e.appDate===r.appDate)){
-      chgData.push({id:chgNid++,...r});added++;
-    }
+    const ex=chgData.find(e=>e.mgmt===r.mgmt&&e.chgNo===r.chgNo&&e.appDate===r.appDate);
+    if(ex){if(ex.round==null)ex.round=rd;} // 차수 미지정 기존 건은 이번 차수로 지정
+    else{chgData.push({id:chgNid++,...r,round:rd});added++;}
   });
+  const y0=parseInt(rows[0].year);if(y0)selYear=y0;if(selRound!==0)selRound=rd;
   document.querySelector('.ov').remove();saveAll();render();
   alert(rows.length+'건 중 '+added+'건 등록'+(rows.length-added>0?' (중복 '+(rows.length-added)+'건 제외)':''));
 };
@@ -1342,6 +1369,7 @@ window.showChgEdit=id=>{
     <label>변경신청일<input type="date" id="cg-appDate" value="${it.appDate}"></label>
     <label>변경승인일<input type="date" id="cg-apprDate" value="${it.apprDate}"></label>
     <label>변경상태<select id="cg-result"><option value="">없음</option><option value="변경승인" ${it.result==='변경승인'?'selected':''}>변경승인</option><option value="검토중" ${it.result==='검토중'?'selected':''}>검토중</option><option value="반려" ${it.result==='반려'?'selected':''}>반려</option></select></label>
+    <label>차수<select id="cg-round"><option value="">미지정</option><option value="1"${it.round===1?' selected':''}>1차</option><option value="2"${it.round===2?' selected':''}>2차</option></select></label>
     <label>순번<input id="cg-seq" value="${esc(it.seq)}" style="width:120px"></label>
     <label>변경사유<textarea id="cg-reason" rows="3">${esc(it.reason)}</textarea></label>
     <div class="ma"><button class="btn btn-d" onclick="delChg(${id})">삭제</button><div style="display:flex;gap:6px"><button class="btn btn-c" onclick="this.closest('.ov').remove()">취소</button><button class="btn btn-sv" onclick="saveChg(${id})">저장</button></div></div></div>`;
@@ -1352,6 +1380,7 @@ window.saveChg=id=>{
   ['mgmt','year','etype','org','regionCode','branch','chgNo','appDate','apprDate','result','seq','reason'].forEach(k=>{
     const el=document.getElementById('cg-'+k);if(el)it[k]=el.value;
   });
+  const rEl=document.getElementById('cg-round');it.round=rEl&&rEl.value?parseInt(rEl.value):null;
   document.querySelector('.ov').remove();saveAll();render();
 };
 window.delChg=id=>{if(!confirm('삭제?'))return;chgData=chgData.filter(d=>d.id!==id);document.querySelector('.ov').remove();saveAll();render();};
@@ -1369,6 +1398,7 @@ window.showChgAdd=()=>{
     <label>변경신청일<input type="date" id="cg-appDate" value="${new Date().toISOString().slice(0,10)}"></label>
     <label>변경승인일<input type="date" id="cg-apprDate" value=""></label>
     <label>변경상태<select id="cg-result"><option value="">없음</option><option value="변경승인">변경승인</option><option value="검토중">검토중</option><option value="반려">반려</option></select></label>
+    <label>차수<select id="cg-round"><option value="">미지정</option><option value="1"${selRound===1?' selected':''}>1차</option><option value="2"${selRound===2?' selected':''}>2차</option></select></label>
     <label>순번<input id="cg-seq" value="" style="width:120px"></label>
     <label>변경사유<textarea id="cg-reason" rows="3"></textarea></label>
     <div class="ma"><div></div><div style="display:flex;gap:6px"><button class="btn btn-c" onclick="this.closest('.ov').remove()">취소</button><button class="btn btn-sv" onclick="addChg()">추가</button></div></div></div>`;
@@ -1379,6 +1409,7 @@ window.addChg=()=>{
   ['mgmt','year','etype','org','regionCode','branch','chgNo','appDate','apprDate','result','seq','reason'].forEach(k=>{
     const el=document.getElementById('cg-'+k);it[k]=el?el.value:'';
   });
+  const rEl=document.getElementById('cg-round');it.round=rEl&&rEl.value?parseInt(rEl.value):null;
   if(!it.appDate){alert('변경신청일을 입력해주세요');chgNid--;return;}
   chgData.push(it);
   document.querySelector('.ov').remove();saveAll();render();
