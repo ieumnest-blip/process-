@@ -148,6 +148,13 @@ select.hx-yin{width:auto}
 .hx-fxsec-t{cursor:pointer;font-size:25px;font-weight:800;color:#B23A2A;margin-bottom:10px}
 .hx-fxsec-t .n{margin-left:12px;font-size:18px;font-weight:600;color:#9C6414}
 .stage-pill.dim{opacity:.45}
+.hx-fxfilters{display:flex;flex-wrap:nowrap;align-items:center;gap:6px 14px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.hx-fxfilters .stage-pills{margin-bottom:0;flex-wrap:nowrap;flex:none;gap:5px}
+.hx-fxfilters .stage-pill{flex:none;white-space:nowrap;font-size:14px;padding:3px 9px}
+.hx-fxfilters .hx-prl{flex:none;font-size:14px;min-width:0}
+.hx-fxfilters .hx-kwbtn{flex:none;white-space:nowrap;font-size:15px;padding:3px 10px}
+@media(max-width:900px){.hx-fxfilters{flex-wrap:wrap;overflow-x:visible}.hx-fxfilters .stage-pills{flex-wrap:wrap}}
+.hx-fxsec-t .hx-fxnote{font-weight:400;margin-left:8px}
 .hx-prl{font-size:15px;font-weight:700;color:#9C9488;align-self:center;margin-right:2px;min-width:44px}
 .hx-kwbtn{margin-left:auto;padding:4px 12px;font-size:18px}
 .hx-kwcard-t .n{margin-left:12px;font-size:18px;font-weight:600;color:#9C6414}
@@ -715,13 +722,12 @@ function histFixSection(list,info){
   const pill=(on,cnt,click,txt)=>`<span class="stage-pill${on?' active':''}${cnt?'':' dim'}" onclick="${click}">${txt} <b>${cnt}</b></span>`;
   const groups=hxKwLabels.map(l=>({label:l,items:shown.filter(x=>x.label===l),etc:l==='기타'})).filter(g=>g.items.length);
   const noFx=hxFixKw?[]:(hxFixSel?by[hxFixSel]:names.flatMap(n=>by[n])).filter(r=>!r.items.some(i=>HIST_FIX.test(i.result)));
-  return`<details class="hx-fxsec" open><summary class="hx-fxsec-t">⚠ 보완내역 모음<span class="n">${have.length}개 본부 · 보완 항목 ${allEnt.length}건</span></summary>
-    <div class="stage-pills"><span class="hx-prl">본부</span>${pill(!hxFixSel,allEnt.filter(inK).length,"setHxFix('')",'전체')}`
+  return`<details class="hx-fxsec" open><summary class="hx-fxsec-t">⚠ 보완내역 모음<span class="n">${have.length}개 본부 · 보완 항목 ${allEnt.length}건</span><span class="hx-fxnote">· 본부·키워드 필터는 이 영역에만 적용</span></summary>
+    <div class="hx-fxfilters"><div class="stage-pills"><span class="hx-prl">본부</span>${pill(!hxFixSel,allEnt.filter(inK).length,"setHxFix('')",'전체')}`
     +have.map(n=>pill(hxFixSel===n,allEnt.filter(x=>x.region===n&&inK(x)).length,`setHxFix('${n}')`,n)).join('')
-    +`<span class="hx-fxnote">이 필터는 보완내역에만 적용</span></div>
-    <div class="stage-pills"><span class="hx-prl">키워드</span>${pill(!hxFixKw,allEnt.filter(inR).length,"setHxKw(-1)",'전체')}`
+    +`</div><div class="stage-pills"><span class="hx-prl">키워드</span>${pill(!hxFixKw,allEnt.filter(inR).length,"setHxKw(-1)",'전체')}`
     +hxKwLabels.map((l,i)=>pill(hxFixKw===l,allEnt.filter(x=>x.label===l&&inR(x)).length,`setHxKw(${i})`,esc(l))).join('')
-    +`<button class="btn btn-s hx-kwbtn" onclick="showKwEdit()">⚙ 키워드 편집</button></div>
+    +`</div><button class="btn btn-s hx-kwbtn" title="키워드 편집" onclick="showKwEdit()">⚙ 편집</button></div>
     <div class="hx-fxgrid">${groups.map(g=>histKwCardHtml(g.label,g.items,g.etc)).join('')}</div>`
     +(groups.length?'':`<div class="hx-empty">선택한 본부·키워드에 해당하는 보완 항목이 없습니다</div>`)
     +(noFx.length?`<div class="hx-fxnone">✔ 보완 없음: ${noFx.map(r=>esc(r.site)).join(', ')}</div>`:'')+`</details>`;
