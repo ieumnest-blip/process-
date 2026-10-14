@@ -147,21 +147,24 @@ select.hx-yin{width:auto}
 .hx-fxsec{margin-bottom:8px}
 .hx-fxsec-t{cursor:pointer;font-size:25px;font-weight:800;color:#B23A2A;margin-bottom:10px}
 .hx-fxsec-t .n{margin-left:12px;font-size:18px;font-weight:600;color:#9C6414}
+.hx-kwbtn{margin-left:auto;padding:4px 12px;font-size:18px}
+.hx-fxreg{margin-bottom:20px}
+.hx-fxreg-h{font-size:24px;font-weight:800;color:#B23A2A;border-bottom:2px solid #E8734A;padding:4px 0;margin-bottom:10px}
+.hx-fxreg-h .n,.hx-kwcard-t .n{margin-left:12px;font-size:18px;font-weight:600;color:#9C6414}
+.hx-kwcard{border-left:5px solid #E8734A;background:#FFFBF8;margin-bottom:0;min-width:0;padding:12px 16px}
+.hx-kwcard.etc{border-left-color:#C9C2B5}
+.hx-kwcard-t{font-size:22px;font-weight:800;color:#262220;margin-bottom:4px}
+.hx-kwit{display:grid;grid-template-columns:150px minmax(0,1fr);gap:2px 14px;padding:8px 0;border-top:1px dashed #F3CDBB}
+.hx-kwcard-t+.hx-kwit{border-top:0}
+.hx-kwit-s b{display:block;font-size:19px;color:#262220;word-break:keep-all}
+.hx-kwit-s small{display:block;font-size:15px;color:#9C6414;font-weight:600}
+.hx-kwit-b{white-space:pre-wrap;word-break:keep-all;overflow-wrap:break-word;font-size:18px;line-height:1.5;color:#262220}
+.hx-kwit-b mark{background:#FFE2A8;border-radius:3px;padding:0 2px;color:inherit}
+.hx-fxnone{font-size:18px;color:#2F8F5B;font-weight:600;margin-top:10px}
 .hx-fxnote{font-size:16px;color:#9C9488;margin-left:6px;align-self:center}
 .hx-fxgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
 .hx-fxcol{display:flex;flex-direction:column;gap:14px;min-width:0}
-.hx-fxcard{border-left:5px solid #E8734A;background:#FFFBF8;margin-bottom:0;min-width:0}
-.hx-fxcard.none{border-left-color:#C9C2B5}
-.hx-fxcard-t{font-size:24px;font-weight:800;color:#B23A2A;margin-bottom:10px}
-.hx-fxcard-t .n{margin-left:12px;font-size:18px;font-weight:600;color:#9C6414}
-.hx-fxsite{background:#fff;border:1px solid #F3CDBB;border-radius:10px;padding:10px 14px;margin-bottom:10px}
-.hx-fxsite-h{font-size:22px;font-weight:700;color:#262220;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.hx-fxit{padding:7px 0;border-top:1px dashed #F3CDBB}
-.hx-fxit:first-of-type{border-top:0}
-.hx-fxit-h{font-size:17px;font-weight:600;color:#9C6414;margin-bottom:2px}
-.hx-fxit-b{white-space:pre-wrap;word-break:keep-all;overflow-wrap:break-word;font-size:18px;line-height:1.5;color:#262220}
-.hx-fxnone{font-size:18px;color:#2F8F5B;font-weight:600}
-@media(max-width:900px){.hx-fxgrid{grid-template-columns:1fr}}
+@media(max-width:900px){.hx-fxgrid{grid-template-columns:1fr}.hx-kwit{grid-template-columns:1fr}}
 .hx-grp{margin-bottom:22px}
 .hx-grp-h{display:flex;align-items:baseline;flex-wrap:wrap;gap:10px;font-size:25px;font-weight:800;color:#1C3D5F;border-bottom:2px solid #1C3D5F;padding:6px 0 5px;margin:0 0 12px}
 .hx-grp-h .n{font-size:18px;font-weight:600;color:#9C9488}
@@ -403,7 +406,7 @@ function initCloudSync(){
 let data=[...D],nid=300,cv='duration',sf=new Set(),cy=2026,cm=7;
 let sortCol=null,sortDir=1;
 let chgData=[],chgNid=1,chgSortCol=null,chgSortDir=1;
-let hxFixSel=new Set(); // 설치확인 탭 '보완내역 모음' 전용 필터(비어있으면 전체)
+let hxFixSel=''; // 설치확인 탭 '보완내역 모음' 전용 본부 필터('' = 전체)
 let hxRegionSel=null; // 설치확인 탭: 선택한 지역본부 필터(null=전체)
 let hist={app:[],chg:[],inst:[]},histNid=1; // 처리이력(사업신청/사업변경/설치확인)
 let siteInfo={},siteMemo={},siteAdvE={},siteGrE={};
@@ -539,7 +542,7 @@ function parseImp(text){
 
 // ==HIST-BEGIN==
 const HIST_LABEL={app:'사업신청',chg:'사업변경',inst:'설치확인'};
-function normHist(h){h=h||{};return{app:h.app||[],chg:h.chg||[],inst:h.inst||[]};}
+function normHist(h){h=h||{};return{app:h.app||[],chg:h.chg||[],inst:h.inst||[],kw:Array.isArray(h.kw)?h.kw:null};}
 const HIST_ROW=/^\s*(\d+)\s+(\S+)\s+(\d{4}-\d{2}-\d{2})[ T\t]+(\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?)\s+(\S+)\s+(\S+)(?:\s+(.*))?$/;
 const HIST_FIX=/부적합|보완/;
 // 붙여넣기 형식: [현장명] / "보완 및 부적합 사항" / "NO 처리자 처리일시 상태 결과 의견" / NO·처리자·처리일시·상태·결과 행 + 이어지는 줄은 해당 행의 의견
@@ -649,41 +652,86 @@ function histCardHtml(kind,r,info){
   its.forEach(i=>{h+=`<tr><td>${i.no}</td>${info?`<td class="hx-dtc"><b>${esc(i.dt.slice(0,10))}</b><br>${esc(i.dt.slice(11,16))} · ${esc(i.handler)}</td>`:`<td>${esc(i.handler)}</td><td style="color:#6B6459">${esc(i.dt.slice(0,16))}</td>`}<td style="white-space:nowrap">${esc(i.status)}</td><td>${histBadge(i.result)}</td><td class="hx-op${HIST_FIX.test(i.result)?' fix':''}">${HIST_FIX.test(i.result)?'<div class="hx-fix-t">⚠ 보완 요청</div>':''}${esc(i.opinion)}</td></tr>`;});
   return h+`</tbody></table></div></details></div>`;
 }
-// ── 보완내역 모음: 설치확인 탭 맨 위에 지역본부별 카드를 좌우 2열로 모아 보여주고, 이 영역에만 적용되는 본부 필터를 가진다 ──
-function histFixCardHtml(n,recs){
-  const rows=recs.map(r=>({r,fx:r.items.filter(i=>HIST_FIX.test(i.result)).sort((a,b)=>a.no-b.no)}));
-  const withFx=rows.filter(x=>x.fx.length),noFx=rows.filter(x=>!x.fx.length);
-  if(!withFx.length)return'';
-  const total=withFx.reduce((s,x)=>s+x.fx.length,0);
-  let h=`<div class="hx-card hx-fxcard${n===HX_NONE?' none':''}"><div class="hx-fxcard-t">${n}<span class="n">${withFx.length}곳 · ${total}건</span></div>`;
-  withFx.forEach(({r,fx})=>{
-    h+=`<div class="hx-fxsite"><div class="hx-fxsite-h">${esc(r.site)}<span class="hx-chip">보완 ${fx.length}회</span></div>`
-      +fx.map(i=>`<div class="hx-fxit"><div class="hx-fxit-h">NO.${i.no} · ${esc(i.dt.slice(0,10))} · ${esc(i.handler)}</div><div class="hx-fxit-b">${esc(i.opinion)||'(의견 없음)'}</div></div>`).join('')+`</div>`;
+// ── 보완내역 모음: 설치확인 탭 맨 위. 지역본부별로 나누고, 그 안에서 보완 "내용(키워드)"별 카드를 좌우로 배치. 본부 필터는 이 영역에만 적용 ──
+// 키워드: 한 줄에 하나, 같은 뜻의 다른 표현은 / 로 구분. 위쪽 키워드가 우선(한 줄은 가장 먼저 맞는 키워드 한 곳에만 들어감)
+const HX_KW_DEFAULT=['보조금 지급 동의서','협조동의서','구조안전확인서','현장점검표','고객번호','설계도면','공정사진','인증서','인버터','설치용량','계약전력량','설치조감도'];
+function hxTermRe(t){return new RegExp(t.replace(/\s+/g,'').split('').map(ch=>ch.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('\\s*'),'i');}
+function histKwList(){
+  const src=Array.isArray(hist.kw)?hist.kw:HX_KW_DEFAULT;
+  return src.map(s=>String(s).split('/').map(t=>t.trim()).filter(Boolean)).filter(a=>a.length).map(a=>({label:a[0],res:a.map(hxTermRe)}));
+}
+// 의견을 보완 항목(줄) 단위로 쪼갠다. 검토자 연락처 줄은 제외하고 맨 앞 "ㅇ" 표시는 뗀다.
+function histFixLines(op){
+  const phT=/(?<!\d)0\d{1,3}[\s)\-.]+\d{3,4}[\s\-.]+\d{4}(?!\d)/,phG=/(?<!\d)0\d{1,3}[\s)\-.]+\d{3,4}[\s\-.]+\d{4}(?!\d)/g;
+  return String(op||'').split('\n').map(l=>l.trim()).filter(l=>{
+    if(!l)return false;
+    if(/^\(?\s*(검토자|담당자|문의)/.test(l))return false;
+    if(phT.test(l)&&l.replace(phG,'').replace(/[()\s:,.\-]/g,'').length<=8)return false;
+    return true;
+  }).map(l=>l.replace(/^ㅇ\s*/,''));
+}
+function histKwMatch(line,kws){
+  for(let k=0;k<kws.length;k++)for(const re of kws[k].res){const m=re.exec(line);if(m)return{k,idx:m.index,len:m[0].length};}
+  return null;
+}
+function histFixEntries(recs,kws){
+  const out=[];
+  recs.forEach(r=>[...r.items].filter(i=>HIST_FIX.test(i.result)).sort((a,b)=>a.no-b.no).forEach(i=>{
+    const lines=histFixLines(i.opinion);
+    (lines.length?lines:['(의견 없음)']).forEach(t=>{
+      const m=lines.length?histKwMatch(t,kws):null;
+      out.push({k:m?m.k:-1,idx:m?m.idx:-1,len:m?m.len:0,site:r.site,no:i.no,dt:i.dt,handler:i.handler,text:t});
+    });
+  }));
+  return out;
+}
+function histKwCardHtml(label,items,etc){
+  let h=`<div class="hx-card hx-kwcard${etc?' etc':''}"><div class="hx-kwcard-t">${esc(label)}<span class="n">${items.length}건</span></div>`;
+  items.forEach(e=>{
+    const t=e.idx>=0?esc(e.text.slice(0,e.idx))+'<mark>'+esc(e.text.slice(e.idx,e.idx+e.len))+'</mark>'+esc(e.text.slice(e.idx+e.len)):esc(e.text);
+    h+=`<div class="hx-kwit"><div class="hx-kwit-s" title="${esc(e.dt.slice(0,16))} · ${esc(e.handler)}"><b>${esc(e.site)}</b><small>NO.${e.no} · ${esc(e.dt.slice(5,10))}</small></div><div class="hx-kwit-b">${t}</div></div>`;
   });
-  if(noFx.length)h+=`<div class="hx-fxnone">✔ 보완 없음: ${noFx.map(x=>esc(x.r.site)).join(', ')}</div>`;
   return h+`</div>`;
 }
-// 카드 높이를 줄 수로 대략 어림 (왼쪽/오른쪽 열 중 더 낮은 쪽에 쌓기 위함)
-function histFixWeight(recs){
-  return 3+recs.reduce((s,r)=>{const fx=r.items.filter(i=>HIST_FIX.test(i.result));
-    return fx.length?s+3+fx.reduce((t,i)=>t+2+String(i.opinion||'').split('\n').length,0):s;},0);
-}
 function histFixSection(list,info){
-  const names=[...HX_REGIONS.map(x=>x.n),HX_NONE];
-  const by={},cnt={};names.forEach(n=>{by[n]=[];});
+  const names=[...HX_REGIONS.map(x=>x.n),HX_NONE],kws=histKwList();
+  const by={},ent={},cnt={};names.forEach(n=>{by[n]=[];});
   list.forEach(r=>{const g=info.get(r).region;(by[g]=by[g]||[]).push(r);});
-  names.forEach(n=>{cnt[n]=by[n].reduce((s,r)=>s+r.items.filter(i=>HIST_FIX.test(i.result)).length,0);});
+  names.forEach(n=>{ent[n]=histFixEntries(by[n],kws);cnt[n]=ent[n].length;});
   const have=names.filter(n=>cnt[n]);
   if(!have.length)return'';
-  [...hxFixSel].forEach(n=>{if(!cnt[n])hxFixSel.delete(n);});
-  const show=hxFixSel.size?have.filter(n=>hxFixSel.has(n)):have;
+  if(hxFixSel&&!cnt[hxFixSel])hxFixSel='';
+  const show=hxFixSel?[hxFixSel]:have;
   const total=have.reduce((s,n)=>s+cnt[n],0);
-  return`<details class="hx-fxsec" open><summary class="hx-fxsec-t">⚠ 보완내역 모음<span class="n">${have.length}개 본부 · ${total}건</span></summary>
-    <div class="stage-pills"><span class="stage-pill${hxFixSel.size?'':' active'}" onclick="setHxFix('')">전체 <b>${total}</b></span>`
-    +have.map(n=>`<span class="stage-pill${hxFixSel.has(n)?' active':''}" onclick="setHxFix('${n}')">${n} <b>${cnt[n]}</b></span>`).join('')
-    +`<span class="hx-fxnote">이 필터는 보완내역에만 적용 · 여러 본부를 눌러 나란히 비교</span></div>
-    <div class="hx-fxgrid">${(()=>{const cols=[[],[]],w=[0,0];show.forEach(n=>{const k=w[0]<=w[1]?0:1;cols[k].push(histFixCardHtml(n,by[n]));w[k]+=histFixWeight(by[n]);});return cols.map(a=>`<div class="hx-fxcol">${a.join('')}</div>`).join('');})()}</div></details>`;
+  let h=`<details class="hx-fxsec" open><summary class="hx-fxsec-t">⚠ 보완내역 모음<span class="n">${have.length}개 본부 · 보완 항목 ${total}건</span></summary>
+    <div class="stage-pills"><span class="stage-pill${hxFixSel?'':' active'}" onclick="setHxFix('')">전체 <b>${total}</b></span>`
+    +have.map(n=>`<span class="stage-pill${hxFixSel===n?' active':''}" onclick="setHxFix('${n}')">${n} <b>${cnt[n]}</b></span>`).join('')
+    +`<span class="hx-fxnote">이 필터는 보완내역에만 적용</span><button class="btn btn-s hx-kwbtn" onclick="showKwEdit()">⚙ 키워드 편집</button></div>`;
+  show.forEach(n=>{
+    const groups=kws.map((kw,k)=>({label:kw.label,items:ent[n].filter(x=>x.k===k),etc:false})).filter(g=>g.items.length);
+    const etc=ent[n].filter(x=>x.k<0);if(etc.length)groups.push({label:'기타',items:etc,etc:true});
+    const cols=[[],[]],w=[0,0];
+    groups.forEach(g=>{const k=w[0]<=w[1]?0:1;cols[k].push(histKwCardHtml(g.label,g.items,g.etc));w[k]+=2+g.items.length;});
+    const noFx=by[n].filter(r=>!r.items.some(i=>HIST_FIX.test(i.result)));
+    h+=`<div class="hx-fxreg"><div class="hx-fxreg-h">${n}<span class="n">${by[n].length-noFx.length}곳 · 보완 항목 ${cnt[n]}건</span></div>
+      <div class="hx-fxgrid">${cols.map(a=>`<div class="hx-fxcol">${a.join('')}</div>`).join('')}</div>`
+      +(noFx.length?`<div class="hx-fxnone">✔ 보완 없음: ${noFx.map(r=>esc(r.site)).join(', ')}</div>`:'')+`</div>`;
+  });
+  return h+`</details>`;
 }
+window.showKwEdit=()=>{
+  const ov=document.createElement('div');ov.className='ov';ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="modal"><h3>보완내역 키워드 편집</h3>
+    <p class="imp-hint">보완 의견의 <b>줄마다</b> 아래 키워드가 들어 있는지 보고, 맞는 키워드 카드로 묶어 보여줍니다. <b>한 줄에 키워드 하나</b>를 적고, 같은 뜻의 다른 표현은 <b>/</b> 로 구분하세요(예: <code>협조동의서/협조 동의서</code>). 위쪽 키워드가 우선이며, 어느 키워드에도 안 맞으면 "기타"로 갑니다. 띄어쓰기와 대소문자는 구분하지 않습니다.</p>
+    <textarea class="imp-area" id="kw-t" style="min-height:260px">${esc((Array.isArray(hist.kw)?hist.kw:HX_KW_DEFAULT).join('\n'))}</textarea>
+    <div class="ma"><button class="btn btn-s" onclick="resetKw()">기본값으로</button><div style="display:flex;gap:6px"><button class="btn btn-c" onclick="this.closest('.ov').remove()">취소</button><button class="btn btn-sv" onclick="saveKw()">저장</button></div></div></div>`;
+  document.body.appendChild(ov);
+};
+window.resetKw=()=>{document.getElementById('kw-t').value=HX_KW_DEFAULT.join('\n');};
+window.saveKw=()=>{
+  hist.kw=[...new Set(document.getElementById('kw-t').value.split('\n').map(s=>s.trim()).filter(Boolean))];
+  document.querySelector('.ov').remove();saveAll();render();
+};
 function histCards(kind){
   const list=histVisible(kind);
   const lastOf=r=>r.items.reduce((m,i)=>i.dt>m?i.dt:m,'');
@@ -749,7 +797,7 @@ window.doHistImp=kind=>{
   document.querySelector('.ov').remove();saveAll();render();
   alert(`현장 ${parsed.length}곳 · 신규 ${r.newItems}건`+(r.updItems?` · 갱신 ${r.updItems}건`:'')+' 등록');
 };
-window.setHxFix=n=>{if(!n)hxFixSel.clear();else if(hxFixSel.has(n))hxFixSel.delete(n);else hxFixSel.add(n);render();};
+window.setHxFix=n=>{hxFixSel=(!n||n===hxFixSel)?'':n;render();};
 window.setHxRegion=n=>{hxRegionSel=(!n||n===hxRegionSel)?null:n;render();};
 window.setHistRegion=(kind,id,val)=>{
   const r=hist[kind].find(x=>x.id===id);if(!r)return;
