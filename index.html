@@ -147,6 +147,8 @@ select.hx-yin{width:auto}
 .hx-fxsec{margin-bottom:8px}
 .hx-fxsec-t{cursor:pointer;font-size:25px;font-weight:800;color:#B23A2A;margin-bottom:10px}
 .hx-fxsec-t .n{margin-left:12px;font-size:18px;font-weight:600;color:#9C6414}
+.stage-pill.dim{opacity:.45}
+.hx-prl{font-size:15px;font-weight:700;color:#9C9488;align-self:center;margin-right:2px;min-width:44px}
 .hx-kwbtn{margin-left:auto;padding:4px 12px;font-size:18px}
 .hx-kwcard-t .n{margin-left:12px;font-size:18px;font-weight:600;color:#9C6414}
 .hx-kwcard{border-left:5px solid #E8734A;background:#FFFBF8;margin-bottom:14px;min-width:0;padding:12px 16px;break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;display:block}
@@ -406,6 +408,8 @@ function initCloudSync(){
 let data=[...D],nid=300,cv='duration',sf=new Set(),cy=2026,cm=7;
 let sortCol=null,sortDir=1;
 let chgData=[],chgNid=1,chgSortCol=null,chgSortDir=1;
+let hxFixKw=''; // 보완내역 키워드 필터('' = 전체)
+let hxKwLabels=[]; // 이번 화면에 그려진 키워드 버튼 이름(클릭 시 번호로 찾음)
 let hxFixSel=''; // 설치확인 탭 '보완내역 모음' 전용 본부 필터('' = 전체)
 let hxRegionSel=null; // 설치확인 탭: 선택한 지역본부 필터(null=전체)
 let hist={app:[],chg:[],inst:[]},histNid=1; // 처리이력(사업신청/사업변경/설치확인)
@@ -696,23 +700,30 @@ function histKwCardHtml(label,items,etc){
 // 보완 항목을 지역과 상관없이 "키워드별 카드"로 묶어 가로 3열로 보여준다. 지역은 현장명 옆에 표시하고, 본부 버튼(하나만 선택)은 이 영역에만 적용된다.
 function histFixSection(list,info){
   const names=[...HX_REGIONS.map(x=>x.n),HX_NONE],kws=histKwList();
-  const by={},ent={},cnt={};names.forEach(n=>{by[n]=[];});
+  const by={};names.forEach(n=>{by[n]=[];});
   list.forEach(r=>{const g=info.get(r).region;(by[g]=by[g]||[]).push(r);});
-  names.forEach(n=>{ent[n]=histFixEntries(by[n],kws).map(x=>({...x,region:n}));cnt[n]=ent[n].length;});
-  const have=names.filter(n=>cnt[n]);
+  const labelOf=x=>x.k>=0?kws[x.k].label:'기타';
+  const allEnt=names.flatMap(n=>histFixEntries(by[n],kws).map(x=>({...x,region:n,label:labelOf(x)})));
+  const have=names.filter(n=>allEnt.some(x=>x.region===n));
   if(!have.length)return'';
-  if(hxFixSel&&!cnt[hxFixSel])hxFixSel='';
-  const show=hxFixSel?[hxFixSel]:have;
-  const total=have.reduce((s,n)=>s+cnt[n],0);
-  const all=show.flatMap(n=>ent[n]);
-  const groups=kws.map((kw,k)=>({label:kw.label,items:all.filter(x=>x.k===k),etc:false})).filter(g=>g.items.length);
-  const etc=all.filter(x=>x.k<0);if(etc.length)groups.push({label:'기타',items:etc,etc:true});
-  const noFx=show.flatMap(n=>by[n].filter(r=>!r.items.some(i=>HIST_FIX.test(i.result))));
-  return`<details class="hx-fxsec" open><summary class="hx-fxsec-t">⚠ 보완내역 모음<span class="n">${have.length}개 본부 · 보완 항목 ${total}건</span></summary>
-    <div class="stage-pills"><span class="stage-pill${hxFixSel?'':' active'}" onclick="setHxFix('')">전체 <b>${total}</b></span>`
-    +have.map(n=>`<span class="stage-pill${hxFixSel===n?' active':''}" onclick="setHxFix('${n}')">${n} <b>${cnt[n]}</b></span>`).join('')
-    +`<span class="hx-fxnote">이 필터는 보완내역에만 적용</span><button class="btn btn-s hx-kwbtn" onclick="showKwEdit()">⚙ 키워드 편집</button></div>
+  const kwOrder=[...kws.map(k=>k.label),'기타'];
+  hxKwLabels=kwOrder.filter((l,i)=>kwOrder.indexOf(l)===i&&allEnt.some(x=>x.label===l));
+  if(hxFixSel&&!have.includes(hxFixSel))hxFixSel='';
+  if(hxFixKw&&!hxKwLabels.includes(hxFixKw))hxFixKw='';
+  const inR=x=>!hxFixSel||x.region===hxFixSel, inK=x=>!hxFixKw||x.label===hxFixKw;
+  const shown=allEnt.filter(x=>inR(x)&&inK(x));
+  const pill=(on,cnt,click,txt)=>`<span class="stage-pill${on?' active':''}${cnt?'':' dim'}" onclick="${click}">${txt} <b>${cnt}</b></span>`;
+  const groups=hxKwLabels.map(l=>({label:l,items:shown.filter(x=>x.label===l),etc:l==='기타'})).filter(g=>g.items.length);
+  const noFx=hxFixKw?[]:(hxFixSel?by[hxFixSel]:names.flatMap(n=>by[n])).filter(r=>!r.items.some(i=>HIST_FIX.test(i.result)));
+  return`<details class="hx-fxsec" open><summary class="hx-fxsec-t">⚠ 보완내역 모음<span class="n">${have.length}개 본부 · 보완 항목 ${allEnt.length}건</span></summary>
+    <div class="stage-pills"><span class="hx-prl">본부</span>${pill(!hxFixSel,allEnt.filter(inK).length,"setHxFix('')",'전체')}`
+    +have.map(n=>pill(hxFixSel===n,allEnt.filter(x=>x.region===n&&inK(x)).length,`setHxFix('${n}')`,n)).join('')
+    +`<span class="hx-fxnote">이 필터는 보완내역에만 적용</span></div>
+    <div class="stage-pills"><span class="hx-prl">키워드</span>${pill(!hxFixKw,allEnt.filter(inR).length,"setHxKw(-1)",'전체')}`
+    +hxKwLabels.map((l,i)=>pill(hxFixKw===l,allEnt.filter(x=>x.label===l&&inR(x)).length,`setHxKw(${i})`,esc(l))).join('')
+    +`<button class="btn btn-s hx-kwbtn" onclick="showKwEdit()">⚙ 키워드 편집</button></div>
     <div class="hx-fxgrid">${groups.map(g=>histKwCardHtml(g.label,g.items,g.etc)).join('')}</div>`
+    +(groups.length?'':`<div class="hx-empty">선택한 본부·키워드에 해당하는 보완 항목이 없습니다</div>`)
     +(noFx.length?`<div class="hx-fxnone">✔ 보완 없음: ${noFx.map(r=>esc(r.site)).join(', ')}</div>`:'')+`</details>`;
 }
 window.showKwEdit=()=>{
@@ -737,7 +748,7 @@ function histCards(kind){
     :`<div class="hx-empty">등록된 처리이력이 없습니다 — '📋 처리이력 붙여넣기'로 입력하세요</div>`;
   if(kind!=='inst')return list.map(r=>histCardHtml(kind,r)).join('');
   // 설치확인: 지역본부별로 묶어서 가로 카드 그리드로 배치
-  const names=[...HX_REGIONS.map(x=>x.n),HX_NONE];
+  const names=[HX_NONE,...HX_REGIONS.map(x=>x.n)]; // 현장별 처리이력은 분류가 필요한 미분류를 맨 앞에
   const info=new Map(list.map(r=>[r,histRegionInfo(r)]));
   const cnt={};list.forEach(r=>{const g=info.get(r).region;cnt[g]=(cnt[g]||0)+1;});
   if(hxRegionSel&&!cnt[hxRegionSel])hxRegionSel=null;
@@ -793,6 +804,7 @@ window.doHistImp=kind=>{
   document.querySelector('.ov').remove();saveAll();render();
   alert(`현장 ${parsed.length}곳 · 신규 ${r.newItems}건`+(r.updItems?` · 갱신 ${r.updItems}건`:'')+' 등록');
 };
+window.setHxKw=i=>{const l=i<0?'':hxKwLabels[i];hxFixKw=(!l||l===hxFixKw)?'':l;render();};
 window.setHxFix=n=>{hxFixSel=(!n||n===hxFixSel)?'':n;render();};
 window.setHxRegion=n=>{hxRegionSel=(!n||n===hxRegionSel)?null:n;render();};
 window.setHistRegion=(kind,id,val)=>{
