@@ -144,6 +144,17 @@ select.hx-yin{width:auto}
 .hx-grid .dt td.hx-op{font-size:18px;padding:6px 10px;overflow-wrap:anywhere}
 .hx-grid .dt td.hx-dtc{white-space:nowrap;color:#6B6459;line-height:1.35;padding:5px 8px}
 .hx-grid .dt td.hx-dtc b{color:#262220;font-weight:600}
+.hx-sumcard{grid-column:1/-1;border-left:5px solid #E8734A;background:#FFFBF8}
+.hx-sumcard-t{cursor:pointer;font-size:23px;font-weight:800;color:#B23A2A;margin-bottom:10px}
+.hx-sumcard-t .n{margin-left:12px;font-size:18px;font-weight:600;color:#9C6414}
+.hx-sumcard-b{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(420px,100%),1fr));gap:10px}
+.hx-sumsite{background:#fff;border:1px solid #F3CDBB;border-radius:10px;padding:10px 14px;min-width:0}
+.hx-sumsite-h{font-size:22px;font-weight:700;color:#262220;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hx-sumit{padding:7px 0;border-top:1px dashed #F3CDBB}
+.hx-sumit:first-of-type{border-top:0}
+.hx-sumit-h{font-size:17px;font-weight:600;color:#9C6414;margin-bottom:2px}
+.hx-sumit-b{white-space:pre-wrap;overflow-wrap:anywhere;font-size:19px;line-height:1.5;color:#262220}
+.hx-sumnone{margin-top:10px;font-size:18px;color:#2F8F5B;font-weight:600}
 .hx-grp{margin-bottom:22px}
 .hx-grp-h{display:flex;align-items:baseline;flex-wrap:wrap;gap:10px;font-size:25px;font-weight:800;color:#1C3D5F;border-bottom:2px solid #1C3D5F;padding:6px 0 5px;margin:0 0 12px}
 .hx-grp-h .n{font-size:18px;font-weight:600;color:#9C9488}
@@ -630,6 +641,21 @@ function histCardHtml(kind,r,info){
   its.forEach(i=>{h+=`<tr><td>${i.no}</td>${info?`<td class="hx-dtc"><b>${esc(i.dt.slice(0,10))}</b><br>${esc(i.dt.slice(11,16))} · ${esc(i.handler)}</td>`:`<td>${esc(i.handler)}</td><td style="color:#6B6459">${esc(i.dt.slice(0,16))}</td>`}<td style="white-space:nowrap">${esc(i.status)}</td><td>${histBadge(i.result)}</td><td class="hx-op${HIST_FIX.test(i.result)?' fix':''}">${HIST_FIX.test(i.result)?'<div class="hx-fix-t">⚠ 보완 요청</div>':''}${esc(i.opinion)}</td></tr>`;});
   return h+`</tbody></table></div></details></div>`;
 }
+// 지역본부 안의 모든 현장에서 보완(부적합) 의견만 모아 보여주는 카드
+function histSummaryHtml(n,recs){
+  const rows=recs.map(r=>({r,fx:r.items.filter(i=>HIST_FIX.test(i.result)).sort((a,b)=>a.no-b.no)}));
+  const withFx=rows.filter(x=>x.fx.length),noFx=rows.filter(x=>!x.fx.length);
+  if(!withFx.length)return'';
+  const total=withFx.reduce((s,x)=>s+x.fx.length,0);
+  let h=`<div class="hx-card hx-sumcard"><details open><summary class="hx-sumcard-t">⚠ ${n} 보완내역 모음<span class="n">${withFx.length}곳 · ${total}건</span></summary><div class="hx-sumcard-b">`;
+  withFx.forEach(({r,fx})=>{
+    h+=`<div class="hx-sumsite"><div class="hx-sumsite-h">${esc(r.site)}<span class="hx-chip">보완 ${fx.length}회</span></div>`
+      +fx.map(i=>`<div class="hx-sumit"><div class="hx-sumit-h">NO.${i.no} · ${esc(i.dt.slice(0,10))} · ${esc(i.handler)}</div><div class="hx-sumit-b">${esc(i.opinion)||'(의견 없음)'}</div></div>`).join('')+`</div>`;
+  });
+  h+=`</div>`;
+  if(noFx.length)h+=`<div class="hx-sumnone">✔ 보완 없음: ${noFx.map(x=>esc(x.r.site)).join(', ')}</div>`;
+  return h+`</details></div>`;
+}
 function histCards(kind){
   const list=histVisible(kind);
   const lastOf=r=>r.items.reduce((m,i)=>i.dt>m?i.dt:m,'');
@@ -646,7 +672,7 @@ function histCards(kind){
   let h=`<div class="stage-pills"><span class="stage-pill${hxRegionSel?'':' active'}" onclick="setHxRegion('')">전체 <b>${list.length}</b></span>`
     +names.filter(n=>cnt[n]).map(n=>`<span class="stage-pill${hxRegionSel===n?' active':''}" onclick="setHxRegion('${n}')">${n} <b>${cnt[n]}</b></span>`).join('')+`</div>`;
   names.filter(n=>cnt[n]&&(!hxRegionSel||hxRegionSel===n)).forEach(n=>{
-    h+=`<div class="hx-grp${n===HX_NONE?' none':''}"><div class="hx-grp-h">${n}<span class="n">${cnt[n]}곳</span>${n===HX_NONE?'<span class="n">전화번호로 지역본부를 찾지 못한 현장 — 카드의 지역본부 칸에서 직접 지정하세요</span>':''}</div><div class="hx-grid">${list.filter(r=>info.get(r).region===n).map(r=>histCardHtml(kind,r,info.get(r))).join('')}</div></div>`;
+    h+=`<div class="hx-grp${n===HX_NONE?' none':''}"><div class="hx-grp-h">${n}<span class="n">${cnt[n]}곳</span>${n===HX_NONE?'<span class="n">전화번호로 지역본부를 찾지 못한 현장 — 카드의 지역본부 칸에서 직접 지정하세요</span>':''}</div><div class="hx-grid">${histSummaryHtml(n,list.filter(r=>info.get(r).region===n))}${list.filter(r=>info.get(r).region===n).map(r=>histCardHtml(kind,r,info.get(r))).join('')}</div></div>`;
   });
   return h;
 }
