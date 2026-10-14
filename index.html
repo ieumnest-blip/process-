@@ -145,15 +145,16 @@ select.hx-yin{width:auto}
 .hx-grid .dt td.hx-dtc{white-space:nowrap;color:#6B6459;line-height:1.35;padding:5px 8px}
 .hx-grid .dt td.hx-dtc b{color:#262220;font-weight:600}
 .hx-fxsec{margin-bottom:8px}
-.hx-fxsec-t{cursor:pointer;font-size:25px;font-weight:800;color:#B23A2A;margin-bottom:10px}
+.hx-fxsec-t{cursor:pointer;font-size:25px;font-weight:800;color:#B23A2A;flex:none;white-space:nowrap;user-select:none}
 .hx-fxsec-t .n{margin-left:12px;font-size:18px;font-weight:600;color:#9C6414}
 .stage-pill.dim{opacity:.45}
-.hx-fxfilters{display:flex;flex-wrap:nowrap;align-items:center;gap:6px 14px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.hx-fxhead{display:flex;flex-wrap:nowrap;align-items:center;gap:6px 18px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.hx-fxfilters{display:flex;flex-wrap:nowrap;align-items:center;gap:6px 14px;flex:none}
 .hx-fxfilters .stage-pills{margin-bottom:0;flex-wrap:nowrap;flex:none;gap:5px}
 .hx-fxfilters .stage-pill{flex:none;white-space:nowrap;font-size:14px;padding:3px 9px}
 .hx-fxfilters .hx-prl{flex:none;font-size:14px;min-width:0}
 .hx-fxfilters .hx-kwbtn{flex:none;white-space:nowrap;font-size:15px;padding:3px 10px}
-@media(max-width:900px){.hx-fxfilters{flex-wrap:wrap;overflow-x:visible}.hx-fxfilters .stage-pills{flex-wrap:wrap}}
+@media(max-width:900px){.hx-fxhead,.hx-fxfilters{flex-wrap:wrap;overflow-x:visible}.hx-fxfilters .stage-pills{flex-wrap:wrap}}
 .hx-fxsec-t .hx-fxnote{font-weight:400;margin-left:8px}
 .hx-prl{font-size:15px;font-weight:700;color:#9C9488;align-self:center;margin-right:2px;min-width:44px}
 .hx-kwbtn{margin-left:auto;padding:4px 12px;font-size:18px}
@@ -415,6 +416,7 @@ function initCloudSync(){
 let data=[...D],nid=300,cv='duration',sf=new Set(),cy=2026,cm=7;
 let sortCol=null,sortDir=1;
 let chgData=[],chgNid=1,chgSortCol=null,chgSortDir=1;
+let hxFixOpen=true; // 보완내역 모음 펼침 여부
 let hxFixKw=''; // 보완내역 키워드 필터('' = 전체)
 let hxKwLabels=[]; // 이번 화면에 그려진 키워드 버튼 이름(클릭 시 번호로 찾음)
 let hxFixSel=''; // 설치확인 탭 '보완내역 모음' 전용 본부 필터('' = 전체)
@@ -722,15 +724,15 @@ function histFixSection(list,info){
   const pill=(on,cnt,click,txt)=>`<span class="stage-pill${on?' active':''}${cnt?'':' dim'}" onclick="${click}">${txt} <b>${cnt}</b></span>`;
   const groups=hxKwLabels.map(l=>({label:l,items:shown.filter(x=>x.label===l),etc:l==='기타'})).filter(g=>g.items.length);
   const noFx=hxFixKw?[]:(hxFixSel?by[hxFixSel]:names.flatMap(n=>by[n])).filter(r=>!r.items.some(i=>HIST_FIX.test(i.result)));
-  return`<details class="hx-fxsec" open><summary class="hx-fxsec-t">⚠ 보완내역 모음<span class="n">${have.length}개 본부 · 보완 항목 ${allEnt.length}건</span><span class="hx-fxnote">· 본부·키워드 필터는 이 영역에만 적용</span></summary>
-    <div class="hx-fxfilters"><div class="stage-pills"><span class="hx-prl">본부</span>${pill(!hxFixSel,allEnt.filter(inK).length,"setHxFix('')",'전체')}`
+  const filters=`<div class="hx-fxfilters"><div class="stage-pills"><span class="hx-prl">본부</span>${pill(!hxFixSel,allEnt.filter(inK).length,"setHxFix('')",'전체')}`
     +have.map(n=>pill(hxFixSel===n,allEnt.filter(x=>x.region===n&&inK(x)).length,`setHxFix('${n}')`,n)).join('')
     +`</div><div class="stage-pills"><span class="hx-prl">키워드</span>${pill(!hxFixKw,allEnt.filter(inR).length,"setHxKw(-1)",'전체')}`
     +hxKwLabels.map((l,i)=>pill(hxFixKw===l,allEnt.filter(x=>x.label===l&&inR(x)).length,`setHxKw(${i})`,esc(l))).join('')
-    +`</div><button class="btn btn-s hx-kwbtn" title="키워드 편집" onclick="showKwEdit()">⚙ 편집</button></div>
-    <div class="hx-fxgrid">${groups.map(g=>histKwCardHtml(g.label,g.items,g.etc)).join('')}</div>`
+    +`</div><button class="btn btn-s hx-kwbtn" title="키워드 편집" onclick="showKwEdit()">⚙ 편집</button></div>`;
+  return`<div class="hx-fxsec"><div class="hx-fxhead"><span class="hx-fxsec-t" onclick="toggleFx()" title="눌러서 접기/펴기">${hxFixOpen?'▼':'▶'} ⚠ 보완내역 모음<span class="n">${have.length}개 본부 · 보완 항목 ${allEnt.length}건</span></span>${hxFixOpen?filters:''}</div>`
+    +(hxFixOpen?`<div class="hx-fxgrid">${groups.map(g=>histKwCardHtml(g.label,g.items,g.etc)).join('')}</div>`
     +(groups.length?'':`<div class="hx-empty">선택한 본부·키워드에 해당하는 보완 항목이 없습니다</div>`)
-    +(noFx.length?`<div class="hx-fxnone">✔ 보완 없음: ${noFx.map(r=>esc(r.site)).join(', ')}</div>`:'')+`</details>`;
+    +(noFx.length?`<div class="hx-fxnone">✔ 보완 없음: ${noFx.map(r=>esc(r.site)).join(', ')}</div>`:''):'')+`</div>`;
 }
 window.showKwEdit=()=>{
   const ov=document.createElement('div');ov.className='ov';ov.onclick=e=>{if(e.target===ov)ov.remove();};
@@ -810,6 +812,7 @@ window.doHistImp=kind=>{
   document.querySelector('.ov').remove();saveAll();render();
   alert(`현장 ${parsed.length}곳 · 신규 ${r.newItems}건`+(r.updItems?` · 갱신 ${r.updItems}건`:'')+' 등록');
 };
+window.toggleFx=()=>{hxFixOpen=!hxFixOpen;render();};
 window.setHxKw=i=>{const l=i<0?'':hxKwLabels[i];hxFixKw=(!l||l===hxFixKw)?'':l;render();};
 window.setHxFix=n=>{hxFixSel=(!n||n===hxFixSel)?'':n;render();};
 window.setHxRegion=n=>{hxRegionSel=(!n||n===hxRegionSel)?null:n;render();};
