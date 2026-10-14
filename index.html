@@ -135,6 +135,19 @@ body{background:#FAF8F4;color:#262220}
 .hx-yin{font-size:18px;padding:2px 6px;border:1px solid #EFE9DE;border-radius:8px;background:#F8F6F1;color:#6B6459;width:84px;font-family:inherit}
 select.hx-yin{width:auto}
 .hx-yr{display:inline-flex;gap:4px}
+.hx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(560px,100%),1fr));gap:14px;align-items:start}
+.hx-grid .hx-card{margin-bottom:0;min-width:0;padding:14px 14px}
+.hx-grid .hx-site{font-size:24px}
+.hx-grid .dt{min-width:0}
+.hx-grid .dt th{font-size:15px;padding:6px 3px}
+.hx-grid .dt td{font-size:16px;padding:5px 3px}
+.hx-grid .dt td.hx-op{font-size:18px;padding:6px 10px;overflow-wrap:anywhere}
+.hx-grid .dt td.hx-dtc{white-space:nowrap;color:#6B6459;line-height:1.35;padding:5px 8px}
+.hx-grid .dt td.hx-dtc b{color:#262220;font-weight:600}
+.hx-grp{margin-bottom:22px}
+.hx-grp-h{display:flex;align-items:baseline;flex-wrap:wrap;gap:10px;font-size:25px;font-weight:800;color:#1C3D5F;border-bottom:2px solid #1C3D5F;padding:6px 0 5px;margin:0 0 12px}
+.hx-grp-h .n{font-size:18px;font-weight:600;color:#9C9488}
+.hx-grp.none .hx-grp-h{color:#B85128;border-color:#E8734A}
 .hx-del{margin-left:auto;border:none;background:none;color:#C9C2B5;font-size:19px;cursor:pointer;font-family:inherit}
 .hx-del:hover{color:#B23A2A}
 .hx-fix-t{font-weight:700;color:#B23A2A;font-size:21px;margin-bottom:4px}
@@ -372,6 +385,7 @@ function initCloudSync(){
 let data=[...D],nid=300,cv='duration',sf=new Set(),cy=2026,cm=7;
 let sortCol=null,sortDir=1;
 let chgData=[],chgNid=1,chgSortCol=null,chgSortDir=1;
+let hxRegionSel=null; // 설치확인 탭: 선택한 지역본부 필터(null=전체)
 let hist={app:[],chg:[],inst:[]},histNid=1; // 처리이력(사업신청/사업변경/설치확인)
 let siteInfo={},siteMemo={},siteAdvE={},siteGrE={};
 const TY=new Date().getFullYear();
@@ -564,6 +578,58 @@ function addHist(kind,parsed,year,round){
 // 상단 연도/차수 선택에 맞는 건만 표시 (연도·차수 미지정 건은 항상 표시)
 function histVisible(kind){return hist[kind].filter(r=>(r.year==null||r.year===selYear)&&(selRound===0||r.round==null||r.round===selRound));}
 function histBadge(r){const c=HIST_FIX.test(r||'')?'b-fix':r==='적합'?'b-pass':'b-sub';return`<span class="badge ${c}">${esc(r)||'-'}</span>`;}
+// ── 지역본부 분류 (한국에너지공단 건물지원사업 공단 연락처 별첨5 기준: 지역번호+국번 앞 6자리) ──
+const HX_REGIONS=[
+  {n:'서울',k:'022071'},{n:'경기',k:'031300'},{n:'인천',k:'032249'},{n:'강원',k:'033248'},
+  {n:'세종충북',k:'043901'},{n:'대전충남',k:'042323'},{n:'전북',k:'063906'},{n:'광주전남',k:'062602'},
+  {n:'부산울산',k:'051999'},{n:'대구경북',k:'053580'},{n:'경남',k:'055600'},{n:'제주',k:'064909'}
+];
+const HX_NONE='미분류';
+// 글 속의 전화번호를 모두 찾는다 (예: "070-4639-5065", "T.055-600-8121", "02)2071-3815")
+function histPhones(text){
+  const out=[],re=/(?<!\d)(0\d{1,3})[\s)\-.]+(\d{3,4})[\s\-.]+(\d{4})(?!\d)/g;let m;
+  while((m=re.exec(String(text||'')))){
+    const d=(m[1]+m[2]).slice(0,6),hit=HX_REGIONS.find(x=>x.k===d);
+    out.push({label:m[1]+'-'+m[2],region:hit?hit.n:null});
+  }
+  return out;
+}
+// 현장 1건의 지역본부 판정: 보완·처리 의견의 전화번호 → (없으면) 현장별 기록의 전화번호 → 미분류. 직접 지정한 값이 있으면 그것이 우선.
+function histRegionInfo(r){
+  let nums=[];
+  r.items.forEach(i=>histPhones(i.opinion).forEach(x=>nums.push(x)));
+  if(!nums.some(x=>x.region)){
+    data.filter(d=>baseName(d.site)===r.site).forEach(d=>histPhones(d.detail).forEach(x=>nums.push(x)));
+  }
+  const cnt={};nums.forEach(x=>{if(x.region)cnt[x.region]=(cnt[x.region]||0)+1;});
+  const best=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]||HX_NONE;
+  const manual=r.region&&HX_REGIONS.some(x=>x.n===r.region)?r.region:null;
+  return{auto:best,region:manual||best,manual:!!manual,labels:[...new Set(nums.map(x=>x.label))].slice(0,3)};
+}
+function histCardHtml(kind,r,info){
+  const lastOf=x=>x.items.reduce((m,i)=>i.dt>m?i.dt:m,'');
+  const its=[...r.items].sort((a,b)=>b.no-a.no);
+  if(!its.length)return'';
+  const latest=its[0];
+  const fixes=its.filter(i=>HIST_FIX.test(i.result)).sort((a,b)=>a.no-b.no);
+  const firstD=its.reduce((m,i)=>i.dt<m?i.dt:m,its[0].dt).slice(0,10);
+  const lastD=lastOf(r).slice(0,10);
+  const days=dB(firstD,lastD);
+  const regSel=info?`<select class="hx-yin" title="지역본부 (자동 판정: ${info.auto})" onchange="setHistRegion('${kind}',${r.id},this.value)"><option value="">자동 (${info.auto})</option>${HX_REGIONS.map(x=>`<option${info.manual&&info.region===x.n?' selected':''}>${x.n}</option>`).join('')}</select>`:'';
+  let h=`<div class="hx-card"><div class="hx-head">
+      <span class="hx-site">${esc(r.site)}</span>
+      ${r.year&&r.round?`<span class="hx-chip">${r.year}-${r.round}차</span>`:`<span class="hx-chip" style="color:#B23A2A;border-color:#F3CDBB;background:#FDF3EE">연도·차수 미지정</span>`}
+      <span class="hx-chip">${esc(latest.status)}</span>${histBadge(latest.result)}
+      <span class="hx-chip">최초 ${firstD}</span><span class="hx-chip">최종 ${lastD}${days!==null?` (${days}일)`:''}</span>
+      <span class="hx-chip">처리 ${its.length}회</span><span class="hx-chip" style="${fixes.length?'color:#B23A2A;border-color:#F3CDBB;background:#FDF3EE':''}">보완 ${fixes.length}회</span>
+      ${info&&info.labels.length?`<span class="hx-chip" title="의견에서 찾은 전화번호">📞 ${info.labels.join(' · ')}</span>`:''}
+      <span class="hx-yr"><input type="number" class="hx-yin" min="2020" max="2040" value="${r.year||''}" placeholder="연도" onchange="setHistYR('${kind}',${r.id},'year',this.value)"><select class="hx-yin" onchange="setHistYR('${kind}',${r.id},'round',this.value)"><option value="">차수</option><option value="1"${r.round===1?' selected':''}>1차</option><option value="2"${r.round===2?' selected':''}>2차</option></select>${regSel}</span>
+      <button class="hx-del" onclick="delHist('${kind}',${r.id})">✕ 삭제</button></div>`;
+  h+=`<details class="hx-det" open><summary>전체 처리이력 (${its.length}건)${fixes.length?`<span class="hx-sum-fix">⚠ 보완 요청 내역 (${fixes.length}회)</span>`:`<span class="hx-sum-ok">✔ 보완 요청 없음</span>`}</summary><div class="dt-wrap"><table class="dt"><thead><tr>
+      ${info?'<th>NO</th><th>처리일시 · 처리자</th>':'<th>NO</th><th>처리자</th><th>처리일시</th>'}<th>상태</th><th>결과</th><th style="text-align:left">의견</th></tr></thead><tbody>`;
+  its.forEach(i=>{h+=`<tr><td>${i.no}</td>${info?`<td class="hx-dtc"><b>${esc(i.dt.slice(0,10))}</b><br>${esc(i.dt.slice(11,16))} · ${esc(i.handler)}</td>`:`<td>${esc(i.handler)}</td><td style="color:#6B6459">${esc(i.dt.slice(0,16))}</td>`}<td style="white-space:nowrap">${esc(i.status)}</td><td>${histBadge(i.result)}</td><td class="hx-op${HIST_FIX.test(i.result)?' fix':''}">${HIST_FIX.test(i.result)?'<div class="hx-fix-t">⚠ 보완 요청</div>':''}${esc(i.opinion)}</td></tr>`;});
+  return h+`</tbody></table></div></details></div>`;
+}
 function histCards(kind){
   const list=histVisible(kind);
   const lastOf=r=>r.items.reduce((m,i)=>i.dt>m?i.dt:m,'');
@@ -571,27 +637,18 @@ function histCards(kind){
   if(!list.length)return hist[kind].length
     ?`<div class="hx-empty">${selYear}년${selRound?' '+selRound+'차':''}에 해당하는 처리이력이 없습니다 (다른 연도·차수에 ${hist[kind].length}건 있음)</div>`
     :`<div class="hx-empty">등록된 처리이력이 없습니다 — '📋 처리이력 붙여넣기'로 입력하세요</div>`;
-  return list.map(r=>{
-    const its=[...r.items].sort((a,b)=>b.no-a.no);
-    if(!its.length)return'';
-    const latest=its[0];
-    const fixes=its.filter(i=>HIST_FIX.test(i.result)).sort((a,b)=>a.no-b.no);
-    const firstD=its.reduce((m,i)=>i.dt<m?i.dt:m,its[0].dt).slice(0,10);
-    const lastD=lastOf(r).slice(0,10);
-    const days=dB(firstD,lastD);
-    let h=`<div class="hx-card"><div class="hx-head">
-      <span class="hx-site">${esc(r.site)}</span>
-      ${r.year&&r.round?`<span class="hx-chip">${r.year}-${r.round}차</span>`:`<span class="hx-chip" style="color:#B23A2A;border-color:#F3CDBB;background:#FDF3EE">연도·차수 미지정</span>`}
-      <span class="hx-chip">${esc(latest.status)}</span>${histBadge(latest.result)}
-      <span class="hx-chip">최초 ${firstD}</span><span class="hx-chip">최종 ${lastD}${days!==null?` (${days}일)`:''}</span>
-      <span class="hx-chip">처리 ${its.length}회</span><span class="hx-chip" style="${fixes.length?'color:#B23A2A;border-color:#F3CDBB;background:#FDF3EE':''}">보완 ${fixes.length}회</span>
-      <span class="hx-yr"><input type="number" class="hx-yin" min="2020" max="2040" value="${r.year||''}" placeholder="연도" onchange="setHistYR('${kind}',${r.id},'year',this.value)"><select class="hx-yin" onchange="setHistYR('${kind}',${r.id},'round',this.value)"><option value="">차수</option><option value="1"${r.round===1?' selected':''}>1차</option><option value="2"${r.round===2?' selected':''}>2차</option></select></span>
-      <button class="hx-del" onclick="delHist('${kind}',${r.id})">✕ 삭제</button></div>`;
-    h+=`<details class="hx-det" open><summary>전체 처리이력 (${its.length}건)${fixes.length?`<span class="hx-sum-fix">⚠ 보완 요청 내역 (${fixes.length}회)</span>`:`<span class="hx-sum-ok">✔ 보완 요청 없음</span>`}</summary><div class="dt-wrap"><table class="dt"><thead><tr>
-      <th>NO</th><th>처리자</th><th>처리일시</th><th>상태</th><th>결과</th><th style="text-align:left">의견</th></tr></thead><tbody>`;
-    its.forEach(i=>{h+=`<tr><td>${i.no}</td><td>${esc(i.handler)}</td><td style="color:#6B6459">${esc(i.dt.slice(0,16))}</td><td>${esc(i.status)}</td><td>${histBadge(i.result)}</td><td class="hx-op${HIST_FIX.test(i.result)?' fix':''}">${HIST_FIX.test(i.result)?'<div class="hx-fix-t">⚠ 보완 요청</div>':''}${esc(i.opinion)}</td></tr>`;});
-    return h+`</tbody></table></div></details></div>`;
-  }).join('');
+  if(kind!=='inst')return list.map(r=>histCardHtml(kind,r)).join('');
+  // 설치확인: 지역본부별로 묶어서 가로 카드 그리드로 배치
+  const names=[...HX_REGIONS.map(x=>x.n),HX_NONE];
+  const info=new Map(list.map(r=>[r,histRegionInfo(r)]));
+  const cnt={};list.forEach(r=>{const g=info.get(r).region;cnt[g]=(cnt[g]||0)+1;});
+  if(hxRegionSel&&!cnt[hxRegionSel])hxRegionSel=null;
+  let h=`<div class="stage-pills"><span class="stage-pill${hxRegionSel?'':' active'}" onclick="setHxRegion('')">전체 <b>${list.length}</b></span>`
+    +names.filter(n=>cnt[n]).map(n=>`<span class="stage-pill${hxRegionSel===n?' active':''}" onclick="setHxRegion('${n}')">${n} <b>${cnt[n]}</b></span>`).join('')+`</div>`;
+  names.filter(n=>cnt[n]&&(!hxRegionSel||hxRegionSel===n)).forEach(n=>{
+    h+=`<div class="hx-grp${n===HX_NONE?' none':''}"><div class="hx-grp-h">${n}<span class="n">${cnt[n]}곳</span>${n===HX_NONE?'<span class="n">전화번호로 지역본부를 찾지 못한 현장 — 카드의 지역본부 칸에서 직접 지정하세요</span>':''}</div><div class="hx-grid">${list.filter(r=>info.get(r).region===n).map(r=>histCardHtml(kind,r,info.get(r))).join('')}</div></div>`;
+  });
+  return h;
 }
 function rHist(kind){
   const list=histVisible(kind);
@@ -637,6 +694,11 @@ window.doHistImp=kind=>{
   selYear=yr;if(selRound!==0)selRound=rd;
   document.querySelector('.ov').remove();saveAll();render();
   alert(`현장 ${parsed.length}곳 · 신규 ${r.newItems}건`+(r.updItems?` · 갱신 ${r.updItems}건`:'')+' 등록');
+};
+window.setHxRegion=n=>{hxRegionSel=(!n||n===hxRegionSel)?null:n;render();};
+window.setHistRegion=(kind,id,val)=>{
+  const r=hist[kind].find(x=>x.id===id);if(!r)return;
+  r.region=val||null;saveAll();render();
 };
 window.setHistYR=(kind,id,field,val)=>{
   const r=hist[kind].find(x=>x.id===id);if(!r)return;
