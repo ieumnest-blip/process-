@@ -957,10 +957,9 @@ function rChg(){
     <th ${sa('apprDate')}>변경승인일${ar('apprDate')}</th>
     <th ${sa('dur')}>소요일수${ar('dur')}</th>
     <th ${sa('result')}>변경상태${ar('result')}</th>
-    <th ${sa('seq')}>순번${ar('seq')}</th>
     <th style="text-align:left">변경사유</th>
   </tr></thead><tbody>`;
-  if(!rows.length)h+=`<tr><td colspan="14" style="padding:22px 0;color:#C9C2B5;font-size:19px">${chgData.length?`${selYear}년${selRound?' '+selRound+'차':''}에 해당하는 변경신청 이력이 없습니다 (다른 연도·차수에 ${chgData.length}건 있음)`:`등록된 변경신청 이력이 없습니다 — '📋 변경이력 붙여넣기'로 데이터를 입력하세요`}</td></tr>`;
+  if(!rows.length)h+=`<tr><td colspan="13" style="padding:22px 0;color:#C9C2B5;font-size:19px">${chgData.length?`${selYear}년${selRound?' '+selRound+'차':''}에 해당하는 변경신청 이력이 없습니다 (다른 연도·차수에 ${chgData.length}건 있음)`:`등록된 변경신청 이력이 없습니다 — '📋 변경이력 붙여넣기'로 데이터를 입력하세요`}</td></tr>`;
   rows.forEach(r=>{
     const d=dB(r.appDate,r.apprDate);
     h+=`<tr onclick="showChgEdit(${r.id})" style="cursor:pointer">
@@ -976,8 +975,7 @@ function rChg(){
       <td style="color:#6B6459">${esc(r.apprDate)||'-'}</td>
       <td>${d!==null?`<b style="color:${chgDurColor(d)}">${d}일</b>`:'<span style="color:#C9C2B5">진행중</span>'}</td>
       <td><span class="badge ${bc2(r.result)}">${esc(r.result)||'-'}</span></td>
-      <td>${esc(r.seq)}</td>
-      <td class="memo-cell has" style="text-align:left;max-width:260px" title="${esc(r.reason)}">${esc(r.reason)}</td>
+      <td class="memo-cell has" style="text-align:left;white-space:normal;overflow:visible;text-overflow:clip;max-width:none;min-width:360px;line-height:1.5;padding:6px 10px;color:#262220;font-size:18px">${esc(r.reason)}</td>
     </tr>`;
   });
   h+='</tbody></table></div>';
