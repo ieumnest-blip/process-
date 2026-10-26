@@ -897,7 +897,9 @@ function parseChg(text){
   const rows=[];
   lines.forEach(line=>{
     if(!line.trim())return;
-    const p=line.split('\t').map(x=>x.trim());
+    let p=line.split('\t').map(x=>x.trim());
+    let rnd=null;
+    if(/^\d{1,2}$/.test(p[2]||'')&&/^\d{4}$/.test(p[1]||'')){rnd=parseInt(p[2]);p.splice(2,1);} // 접수회차 컬럼이 있는 표
     if(p.length<8)return; // 필수 컬럼 부족 → 헤더줄/잘못된 줄로 간주하고 건너뜀
     const [mgmt,year,etype,org,regionCode,branch,chgNo,appDate]=p;
     const apprDate=p[8]||'';
@@ -906,7 +908,7 @@ function parseChg(text){
     if(/^\d+$/.test(p[10]||'')){seq=p[10];reasonStart=11;}
     const reason=p.slice(reasonStart).join(' ').trim();
     if(!/^\d{4}-\d{2}-\d{2}$/.test(appDate))return; // 변경신청일이 날짜 형식이 아니면 건너뜀
-    rows.push({mgmt,year,etype,org,regionCode,branch,chgNo,appDate,apprDate:/^\d{4}-\d{2}-\d{2}$/.test(apprDate)?apprDate:'',result,seq,reason});
+    rows.push({mgmt,year,etype,org,regionCode,branch,chgNo,appDate,apprDate:/^\d{4}-\d{2}-\d{2}$/.test(apprDate)?apprDate:'',result,seq,reason,...(rnd?{round:rnd}:{})});
   });
   return rows;
 }
@@ -1561,7 +1563,7 @@ window.showChgImp=()=>{
   const ov=document.createElement('div');ov.className='ov';ov.onclick=e=>{if(e.target===ov)ov.remove();};
   ov.innerHTML=`<div class="modal" style="width:min(720px,94vw)"><h3>사업변경신청이력 붙여넣기</h3>
     <p class="imp-hint"><b>형식:</b> 표(엑셀 등)에서 복사한 여러 줄을 그대로 붙여넣으세요. 한 줄에 탭으로 구분된<br>
-    <b>신청번호 · 참여년도 · 에너지원 · 신청기관명 · 지역코드 · 담당지사 · 변경신청번호 · 변경신청일 · 변경승인일 · 변경상태 · (순번) · 변경사유</b><br>
+    <b>신청번호 · 참여년도 · (접수회차) · 에너지원 · 신청기관명 · 지역코드 · 담당지사 · 변경신청번호 · 변경신청일 · 변경승인일 · 변경상태 · (순번) · 변경사유</b><br>
     순서로 인식하며, <b>변경신청일 → 변경승인일</b> 소요일수를 자동 계산합니다. 승인일이 비어있으면 '진행중'으로 표시됩니다.</p>
     <label>차수<select id="chg-r"><option value="1"${selRound===1?' selected':''}>1차</option><option value="2"${selRound===2?' selected':''}>2차</option></select> <span style="font-size:18px;color:#9C9488">(연도는 붙여넣은 표의 참여년도를 사용)</span></label>
     <textarea class="imp-area" id="chg-t" style="min-height:220px" placeholder="202508010010&#9;2025&#9;태양광&#9;주식회사미소찬&#9;충남&#9;대전충남&#9;8543&#9;2025-11-25&#9;2025-12-02&#9;변경승인&#9;사업기간 변경 사유..."></textarea>
@@ -1587,10 +1589,10 @@ window.doChgImp=()=>{
   let added=0;
   rows.forEach(r=>{
     const ex=chgData.find(e=>e.mgmt===r.mgmt&&e.chgNo===r.chgNo&&e.appDate===r.appDate);
-    if(ex){if(ex.round==null)ex.round=rd;} // 차수 미지정 기존 건은 이번 차수로 지정
-    else{chgData.push({id:chgNid++,...r,round:rd});added++;}
+    if(ex){if(ex.round==null)ex.round=r.round||rd;} // 차수 미지정 기존 건은 이번 차수로 지정
+    else{chgData.push({id:chgNid++,...r,round:r.round||rd});added++;}
   });
-  const y0=parseInt(rows[0].year);if(y0)selYear=y0;if(selRound!==0)selRound=rd;
+  const y0=parseInt(rows[0].year);if(y0)selYear=y0;if(selRound!==0)selRound=rows[0].round||rd;
   document.querySelector('.ov').remove();saveAll();render();
   alert(rows.length+'건 중 '+added+'건 등록'+(rows.length-added>0?' (중복 '+(rows.length-added)+'건 제외)':''));
 };
