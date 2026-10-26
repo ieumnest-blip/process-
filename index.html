@@ -949,14 +949,14 @@ function rChg(){
   const ar=c=>chgSortCol===c?(chgSortDir>0?' ▲':' ▼'):'';
   let h=`<div class="hx-h">처리이력 · 보완내역</div>`+histCards('chg');
   h+=`<div class="hx-h" style="margin-top:18px">변경 신청 → 승인 소요일수</div>`;
-  h+=`<div class="stage-pills"><span class="hx-prl">본부</span><span class="stage-pill${chgRegSel?'':' active'}" onclick="setChgReg('')">전체 <b>${all.length}</b></span>`
+  const regPills=`<div class="stage-pills" style="margin:0 0 0 14px;align-self:center"><span class="hx-prl">본부</span><span class="stage-pill${chgRegSel?'':' active'}" onclick="setChgReg('')">전체 <b>${all.length}</b></span>`
     +[HX_NONE,...HX_REGIONS.map(x=>x.n)].filter(n=>rc[n]).map(n=>`<span class="stage-pill${chgRegSel===n?' active':''}" onclick="setChgReg('${n}')">${n} <b>${rc[n]}</b></span>`).join('')+`</div>`;
   h+=`<div class="dur-cards">`;
   h+= st?`<div class="dur-card"><div class="dl">건수 (승인완료)</div><div class="dv">${st.cnt}건</div></div>
     <div class="dur-card"><div class="dl">평균 소요일수</div><div class="dv">${st.avg}일</div></div>
     <div class="dur-card"><div class="dl">최소 ~ 최대</div><div class="dv">${st.min}일 <span class="dv-arrow">~</span> ${st.max}일</div></div>`
     :`<div class="dur-card dur-empty">승인일이 입력된 건이 없습니다</div>`;
-  h+=`</div>`;
+  h+=regPills+`</div>`;
   h+=`<div class="dt-wrap"><table class="dt"><thead><tr>
     <th ${sa('mgmt')}>신청번호${ar('mgmt')}</th>
     <th ${sa('year')}>참여년도${ar('year')}</th>
