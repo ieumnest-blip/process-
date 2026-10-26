@@ -575,9 +575,48 @@ function parseImp(text){
 const HIST_LABEL={app:'사업신청',chg:'사업변경',inst:'설치확인'};
 function normHist(h){h=h||{};return{app:h.app||[],chg:h.chg||[],inst:h.inst||[],kw:Array.isArray(h.kw)?h.kw:null};}
 const HIST_ROW=/^\s*(\d+)\s+(\S+)\s+(\d{4}-\d{2}-\d{2})[ T\t]+(\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?)\s+(\S+)\s+(\S+)(?:\s+(.*))?$/;
-const HIST_FIX=/부적합|보완/;
+const HIST_FIX=/부적합|보완|반려/;
 // 붙여넣기 형식: [현장명] / "보완 및 부적합 사항" / "NO 처리자 처리일시 상태 결과 의견" / NO·처리자·처리일시·상태·결과 행 + 이어지는 줄은 해당 행의 의견
+// 사업신청·사업변경 형식: [현장명] / "보완요청 및 검토처리 이력" / "요청(처리일자) 요청(항목) 요청(결과) 요청(처리)내역" / 날짜 행(탭: 날짜·항목·결과) + 이어지는 줄은 처리내역. 위가 최신 → 아래부터 NO 1,2,3…
+function parseHistReq(text,defName){
+  const L=String(text||'').replace(/\r/g,'').split('\n');
+  const isHdr=l=>/보완\s*요청\s*및\s*검토\s*처리\s*이력/.test(l);
+  const isCol=l=>/요청\s*\(\s*처리\s*일자\s*\)/.test(l);
+  const DR=/^\s*(\d{4}-\d{2}-\d{2})(?:\s+(?=\S)(.*))?\s*$/;
+  const hs=[];L.forEach((l,i)=>{if(isHdr(l))hs.push(i);});
+  if(!hs.length)hs.push(-1);
+  const blocks=hs.map((h,k)=>{
+    let j=h-1;while(j>=0&&!L[j].trim())j--;
+    const name=(h>=0&&j>=0&&!DR.test(L[j])&&!isCol(L[j]))?L[j].trim():'';
+    return{h,nameIdx:name?j:-1,name:name||defName||''};
+  });
+  const out=[];
+  blocks.forEach((b,k)=>{
+    const from=b.h+1;
+    const nx=blocks[k+1];const to=nx?(nx.nameIdx>=0?nx.nameIdx:nx.h):L.length;
+    let items=[],cur=null,start=from;
+    if(b.h<0){ // 머리글 없이 붙여넣은 경우: 첫 줄이 날짜가 아니면 현장명
+      let i=0;while(i<L.length&&!L[i].trim())i++;
+      if(i<L.length&&!DR.test(L[i])&&!isCol(L[i])){b.name=L[i].trim()||b.name;start=i+1;}else start=i;
+    }
+    for(let i=start;i<to;i++){
+      const l=L[i];if(isCol(l)||isHdr(l))continue;
+      const m=l.match(DR);
+      if(m){
+        let f=l.split('\t'),st='',rs='',op='';
+        if(f.length>1){st=(f[1]||'').trim();rs=(f[2]||'').trim();op=(f.slice(3).join(' ')||'').trim();}
+        else if(m[2]){const mm=m[2].trim().match(/^(.*?)\s*(적합|부적합|보완요청|보완|반려)$/);if(mm){st=mm[1].trim();rs=mm[2];}else st=m[2].trim();}
+        cur={dt:m[1],handler:'',status:st,result:rs,_o:op?[op]:[]};items.push(cur);
+      }else if(cur){cur._o.push(l.replace(/\s+$/,''));}
+    }
+    const n=items.length;
+    items.forEach((it,i)=>{it.no=n-i;it.opinion=it._o.join('\n').replace(/^\s+|\s+$/g,'').replace(/\n{3,}/g,'\n\n');delete it._o;it.req=1;});
+    if(items.length)out.push({site:b.name,items,replace:true});
+  });
+  return out;
+}
 function parseHist(text,defName){
+  if(/요청\s*\(\s*처리\s*일자\s*\)|보완\s*요청\s*및\s*검토\s*처리\s*이력/.test(String(text||'')))return parseHistReq(text,defName);
   const L=String(text||'').replace(/\r/g,'').split('\n');
   const isHdr=l=>/^\s*보완\s*및\s*부적합\s*사항\s*$/.test(l);
   const isCol=l=>/^\s*NO\s+처리자/.test(l);
@@ -620,6 +659,7 @@ function addHist(kind,parsed,year,round){
     if(!rec)rec=hist[kind].find(r=>r.site===p.site&&(r.year==null||r.round==null)); // 연도·차수 미지정 기존 건은 이어받음
     if(!rec){rec={id:histNid++,site:p.site,year,round,items:[]};hist[kind].push(rec);newSites++;}
     rec.year=year;rec.round=round;
+    if(p.replace){rec.items=p.items.slice();newItems+=p.items.length;return;}
     p.items.forEach(it=>{
       const k=rec.items.findIndex(e=>e.no===it.no);
       if(k>=0){rec.items[k]=it;updItems++;}else{rec.items.push(it);newItems++;}
@@ -680,7 +720,7 @@ function histCardHtml(kind,r,info){
       <button class="hx-del" onclick="delHist('${kind}',${r.id})">✕ 삭제</button></div>`;
   h+=`<details class="hx-det" open><summary>전체 처리이력 (${its.length}건)${fixes.length?`<span class="hx-sum-fix">⚠ 보완 요청 내역 (${fixes.length}회)</span>`:`<span class="hx-sum-ok">✔ 보완 요청 없음</span>`}</summary><div class="dt-wrap"><table class="dt"><thead><tr>
       ${info?'<th>NO</th><th>처리일시 · 처리자</th>':'<th>NO</th><th>처리자</th><th>처리일시</th>'}<th>상태</th><th>결과</th><th style="text-align:left">의견</th></tr></thead><tbody>`;
-  its.forEach(i=>{h+=`<tr><td>${i.no}</td>${info?`<td class="hx-dtc"><b>${esc(i.dt.slice(0,10))}</b><br>${esc(i.dt.slice(11,16))} · ${esc(i.handler)}</td>`:`<td>${esc(i.handler)}</td><td style="color:#6B6459">${esc(i.dt.slice(0,16))}</td>`}<td style="white-space:nowrap">${esc(i.status)}</td><td>${histBadge(i.result)}</td><td class="hx-op${HIST_FIX.test(i.result)?' fix':''}">${HIST_FIX.test(i.result)?'<div class="hx-fix-t">⚠ 보완 요청</div>':''}${esc(i.opinion)}</td></tr>`;});
+  its.forEach(i=>{h+=`<tr><td>${i.no}</td>${info?`<td class="hx-dtc"><b>${esc(i.dt.slice(0,10))}</b>${[i.dt.slice(11,16),i.handler].filter(Boolean).length?'<br>'+esc([i.dt.slice(11,16),i.handler].filter(Boolean).join(' · ')):''}</td>`:`<td>${esc(i.handler)}</td><td style="color:#6B6459">${esc(i.dt.slice(0,16))}</td>`}<td style="white-space:nowrap">${esc(i.status)}</td><td>${histBadge(i.result)}</td><td class="hx-op${HIST_FIX.test(i.result)?' fix':''}">${HIST_FIX.test(i.result)?'<div class="hx-fix-t">⚠ 보완 요청</div>':''}${esc(i.opinion)}</td></tr>`;});
   return h+`</tbody></table></div></details></div>`;
 }
 // ── 보완내역 모음: 설치확인 탭 맨 위. 지역본부별로 나누고, 그 안에서 보완 "내용(키워드)"별 카드를 좌우로 배치. 본부 필터는 이 영역에만 적용 ──
