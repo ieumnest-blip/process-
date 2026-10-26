@@ -713,6 +713,8 @@ function histRegionInfo(r){
   const manual=r.region&&HX_REGIONS.some(x=>x.n===r.region)?r.region:null;
   return{auto:best,region:manual||best,manual:!!manual,labels:[...new Set(nums.map(x=>x.label))].slice(0,3)};
 }
+// 사업신청: '신청서 검토' 결과가 적합이 된 날짜 = 선정일 (최종 결과 적합)
+function histSel(r){const x=r.items.filter(i=>/신청서\s*검토/.test(i.status)&&i.result==='적합').sort((a,b)=>a.dt.localeCompare(b.dt));return x.length?x[0]:null;}
 function histCardHtml(kind,r,info){
   const lastOf=x=>x.items.reduce((m,i)=>i.dt>m?i.dt:m,'');
   const its=[...r.items].sort((a,b)=>b.no-a.no);
@@ -726,7 +728,7 @@ function histCardHtml(kind,r,info){
   let h=`<div class="hx-card"><div class="hx-head">
       <span class="hx-site">${esc(r.site)}</span>
       ${r.year&&r.round?`<span class="hx-chip">${r.year}-${r.round}차</span>`:`<span class="hx-chip" style="color:#B23A2A;border-color:#F3CDBB;background:#FDF3EE">연도·차수 미지정</span>`}
-      <span class="hx-chip">${esc(latest.status)}</span>${histBadge(latest.result)}
+      ${kind==='app'&&histSel(r)?`<span class="hx-chip" style="color:#2F8F5B;border-color:#BFE3CE;background:#EAF6EF;font-weight:700">✔ 선정 ${histSel(r).dt.slice(0,10)}</span><span class="badge b-pass">최종 적합</span>`:`<span class="hx-chip">${esc(latest.status)}</span>${histBadge(latest.result)}`}
       <span class="hx-chip">최초 ${firstD}</span><span class="hx-chip">최종 ${lastD}${days!==null?` (${days}일)`:''}</span>
       <span class="hx-chip">처리 ${its.length}회</span><span class="hx-chip" style="${fixes.length?'color:#B23A2A;border-color:#F3CDBB;background:#FDF3EE':''}">보완 ${fixes.length}회</span>
       ${info&&info.labels.length?`<span class="hx-chip" title="의견에서 찾은 전화번호">📞 ${info.labels.join(' · ')}</span>`:''}
@@ -845,11 +847,11 @@ function histCards(kind){
 function rHist(kind){
   const list=histVisible(kind);
   const withFix=list.filter(r=>r.items.some(i=>HIST_FIX.test(i.result))).length;
-  const done=list.filter(r=>{const l=[...r.items].sort((a,b)=>b.no-a.no)[0];return l&&l.result==='적합';}).length;
+  const done=list.filter(r=>{if(kind==='app')return !!histSel(r);const l=[...r.items].sort((a,b)=>b.no-a.no)[0];return l&&l.result==='적합';}).length;
   let h=`<div class="dur-cards">
     <div class="dur-card"><div class="dl">${HIST_LABEL[kind]} 현장</div><div class="dv">${list.length}건</div></div>
     <div class="dur-card"><div class="dl">보완 이력 있음</div><div class="dv">${withFix}건</div></div>
-    <div class="dur-card"><div class="dl">최종 결과 적합</div><div class="dv">${done}건</div></div></div>`;
+    <div class="dur-card"><div class="dl">${kind==='app'?'선정 (최종 적합)':'최종 결과 적합'}</div><div class="dv">${done}건</div></div></div>`;
   return h+histCards(kind);
 }
 window.showHistImp=kind=>{
