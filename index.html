@@ -438,6 +438,7 @@ let hxFixOpen=true; // 보완내역 모음 펼침 여부
 let hxFixKw=''; // 보완내역 키워드 필터('' = 전체)
 let hxKwLabels=[]; // 이번 화면에 그려진 키워드 버튼 이름(클릭 시 번호로 찾음)
 let hxFixSel=''; // 설치확인 탭 '보완내역 모음' 전용 본부 필터('' = 전체)
+let hxRegK={app:null,chg:null},chgRegSel=null;
 let hxRegionSel=null; // 설치확인 탭: 선택한 지역본부 필터(null=전체)
 let hist={app:[],chg:[],inst:[]},histNid=1; // 처리이력(사업신청/사업변경/설치확인)
 let siteInfo={},siteMemo={},siteAdvE={},siteGrE={};
@@ -688,6 +689,8 @@ function histPhones(text){
   return out;
 }
 // 현장 1건의 지역본부 판정: 보완·처리 의견의 전화번호 → (없으면) 현장별 기록의 전화번호 → 미분류. 직접 지정한 값이 있으면 그것이 우선.
+// 담당지사(대구경북, 경기지역 …) → 지역본부 이름
+function histBranchRegion(b){const t=String(b||'').replace(/지역|본부|지사|\s/g,'');const h=HX_REGIONS.find(x=>x.n===t)||HX_REGIONS.find(x=>t&&(x.n.includes(t)||t.includes(x.n)));return h?h.n:HX_NONE;}
 function histRegionInfo(r){
   let nums=[];
   r.items.forEach(i=>histPhones(i.opinion).forEach(x=>nums.push(x)));
@@ -695,6 +698,10 @@ function histRegionInfo(r){
     data.filter(d=>baseName(d.site)===r.site).forEach(d=>histPhones(d.detail).forEach(x=>nums.push(x)));
   }
   const cnt={};nums.forEach(x=>{if(x.region)cnt[x.region]=(cnt[x.region]||0)+1;});
+  if(!Object.keys(cnt).length){ // 전화번호로 못 찾으면 사업변경 표의 담당지사로 판정
+    const nm=t=>String(t||'').replace(/㈜|\(주\)|주식회사|\s/g,'');const sn=nm(r.site);
+    chgData.forEach(c=>{const on=nm(c.org);if(sn&&on&&(on.includes(sn)||sn.includes(on))){const g=histBranchRegion(c.branch);if(g!==HX_NONE)cnt[g]=(cnt[g]||0)+1;}});
+  }
   const best=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]||HX_NONE;
   const manual=r.region&&HX_REGIONS.some(x=>x.n===r.region)?r.region:null;
   return{auto:best,region:manual||best,manual:!!manual,labels:[...new Set(nums.map(x=>x.label))].slice(0,3)};
@@ -812,16 +819,17 @@ function histCards(kind){
   if(!list.length)return hist[kind].length
     ?`<div class="hx-empty">${selYear}년${selRound?' '+selRound+'차':''}에 해당하는 처리이력이 없습니다 (다른 연도·차수에 ${hist[kind].length}건 있음)</div>`
     :`<div class="hx-empty">등록된 처리이력이 없습니다 — '📋 처리이력 붙여넣기'로 입력하세요</div>`;
-  if(kind!=='inst')return list.map(r=>histCardHtml(kind,r)).join('');
-  // 설치확인: 지역본부별로 묶어서 가로 카드 그리드로 배치
-  const names=[HX_NONE,...HX_REGIONS.map(x=>x.n)]; // 현장별 처리이력은 분류가 필요한 미분류를 맨 앞에
+  const isI=kind==='inst';
+  const names=[HX_NONE,...HX_REGIONS.map(x=>x.n)]; // 분류가 필요한 미분류를 맨 앞에
   const info=new Map(list.map(r=>[r,histRegionInfo(r)]));
   const cnt={};list.forEach(r=>{const g=info.get(r).region;cnt[g]=(cnt[g]||0)+1;});
-  if(hxRegionSel&&!cnt[hxRegionSel])hxRegionSel=null;
-  let h=histFixSection(list,info)+`<div class="hx-h" style="margin-top:18px">현장별 처리이력</div><div class="stage-pills"><span class="stage-pill${hxRegionSel?'':' active'}" onclick="setHxRegion('')">전체 <b>${list.length}</b></span>`
-    +names.filter(n=>cnt[n]).map(n=>`<span class="stage-pill${hxRegionSel===n?' active':''}" onclick="setHxRegion('${n}')">${n} <b>${cnt[n]}</b></span>`).join('')+`</div>`;
-  names.filter(n=>cnt[n]&&(!hxRegionSel||hxRegionSel===n)).forEach(n=>{
-    h+=`<div class="hx-grp${n===HX_NONE?' none':''}"><div class="hx-grp-h">${n}<span class="n">${cnt[n]}곳</span>${n===HX_NONE?'<span class="n">전화번호로 지역본부를 찾지 못한 현장 — 카드의 지역본부 칸에서 직접 지정하세요</span>':''}</div><div class="hx-grid">${list.filter(r=>info.get(r).region===n).map(r=>histCardHtml(kind,r,info.get(r))).join('')}</div></div>`;
+  let sel=isI?hxRegionSel:hxRegK[kind];
+  if(sel&&!cnt[sel]){sel=null;if(isI)hxRegionSel=null;else hxRegK[kind]=null;}
+  const pills=`<div class="stage-pills"><span class="hx-prl">본부</span><span class="stage-pill${sel?'':' active'}" onclick="setHxRegion('','${kind}')">전체 <b>${list.length}</b></span>`
+    +names.filter(n=>cnt[n]).map(n=>`<span class="stage-pill${sel===n?' active':''}" onclick="setHxRegion('${n}','${kind}')">${n} <b>${cnt[n]}</b></span>`).join('')+`</div>`;
+  let h=(isI?histFixSection(list,info)+`<div class="hx-h" style="margin-top:18px">현장별 처리이력</div>`:'')+pills;
+  names.filter(n=>cnt[n]&&(!sel||sel===n)).forEach(n=>{
+    h+=`<div class="hx-grp${n===HX_NONE?' none':''}"><div class="hx-grp-h">${n}<span class="n">${cnt[n]}곳</span>${n===HX_NONE?'<span class="n">전화번호로 지역본부를 찾지 못한 현장 — 카드의 지역본부 칸에서 직접 지정하세요</span>':''}</div><div class="hx-grid">${list.filter(r=>info.get(r).region===n).map(r=>histCardHtml(kind,r,info.get(r))).join('')}</div></div>`
   });
   return h;
 }
@@ -873,7 +881,7 @@ window.doHistImp=kind=>{
 window.toggleFx=()=>{hxFixOpen=!hxFixOpen;render();};
 window.setHxKw=i=>{const l=i<0?'':hxKwLabels[i];hxFixKw=(!l||l===hxFixKw)?'':l;render();};
 window.setHxFix=n=>{hxFixSel=(!n||n===hxFixSel)?'':n;render();};
-window.setHxRegion=n=>{hxRegionSel=(!n||n===hxRegionSel)?null:n;render();};
+window.setHxRegion=(n,kind)=>{if(kind&&kind!=='inst'){hxRegK[kind]=(!n||n===hxRegK[kind])?null:n;}else hxRegionSel=(!n||n===hxRegionSel)?null:n;render();};
 window.setHistRegion=(kind,id,val)=>{
   const r=hist[kind].find(x=>x.id===id);if(!r)return;
   r.region=val||null;saveAll();render();
@@ -922,7 +930,10 @@ function chgDurColor(d){if(d===null)return '#9C9488';return d>14?'#B23A2A':d>7?'
 // 상단 연도/차수 선택에 맞는 변경신청만 표시 (참여년도 없는 건·차수 미지정 건은 항상 표시)
 function chgVisible(){return chgData.filter(r=>{const y=parseInt(r.year);return(isNaN(y)||y===selYear)&&(selRound===0||r.round==null||r.round===selRound);});}
 function rChg(){
-  let rows=chgVisible();
+  const all=chgVisible();
+  const rc={};all.forEach(r=>{const g=histBranchRegion(r.branch);rc[g]=(rc[g]||0)+1;});
+  if(chgRegSel&&!rc[chgRegSel])chgRegSel=null;
+  let rows=chgRegSel?all.filter(r=>histBranchRegion(r.branch)===chgRegSel):all.slice();
   if(chgSortCol){
     rows.sort((a,b)=>{
       let va=chgSortCol==='dur'?dB(a.appDate,a.apprDate):a[chgSortCol];
@@ -938,6 +949,8 @@ function rChg(){
   const ar=c=>chgSortCol===c?(chgSortDir>0?' ▲':' ▼'):'';
   let h=`<div class="hx-h">처리이력 · 보완내역</div>`+histCards('chg');
   h+=`<div class="hx-h" style="margin-top:18px">변경 신청 → 승인 소요일수</div>`;
+  h+=`<div class="stage-pills"><span class="hx-prl">본부</span><span class="stage-pill${chgRegSel?'':' active'}" onclick="setChgReg('')">전체 <b>${all.length}</b></span>`
+    +[HX_NONE,...HX_REGIONS.map(x=>x.n)].filter(n=>rc[n]).map(n=>`<span class="stage-pill${chgRegSel===n?' active':''}" onclick="setChgReg('${n}')">${n} <b>${rc[n]}</b></span>`).join('')+`</div>`;
   h+=`<div class="dur-cards">`;
   h+= st?`<div class="dur-card"><div class="dl">건수 (승인완료)</div><div class="dv">${st.cnt}건</div></div>
     <div class="dur-card"><div class="dl">평균 소요일수</div><div class="dv">${st.avg}일</div></div>
@@ -1555,6 +1568,7 @@ window.doImp=()=>{
   alert(site+' ('+yr+'-'+rnd+'차) — '+added+'건 등록'+(items.length-added>0?' (중복 '+(items.length-added)+'건 제외)':''));
 };
 
+window.setChgReg=n=>{chgRegSel=(!n||n===chgRegSel)?null:n;render();};
 window.chgDoSort=c=>{if(chgSortCol===c)chgSortDir*=-1;else{chgSortCol=c;chgSortDir=1;}render();};
 
 window.showChgImp=()=>{
