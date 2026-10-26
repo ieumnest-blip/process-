@@ -15,7 +15,9 @@ body{background:#FAF8F4;color:#262220}
 .tabs{display:flex;gap:4px;background:#fff;padding:6px 12px;border-bottom:1px solid #E8E2D8;position:sticky;top:0;z-index:100}
 .tab{flex:1;padding:10px 0;border:none;background:none;border-radius:10px;font-size:21px;cursor:pointer;font-family:inherit;color:#9C9488;font-weight:600;transition:background .15s,color .15s}
 .tab.active{color:#fff;font-weight:700;background:#1C3D5F}
-.toolbar{padding:10px 12px 6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+.toolbar{padding:10px 12px 6px;display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.tb-mid{display:flex;justify-content:center}.tb-mid:empty{display:none}.tb-mid .stage-pills{margin:0}
+.tb-right{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
 .tb-grp{display:flex;gap:6px;align-items:center}
 .tb-sep{width:1px;align-self:stretch;background:#E8E2D8;margin:0 2px}
 .search-wrap{position:relative;flex:0 1 400px}
@@ -76,11 +78,11 @@ body{background:#FAF8F4;color:#262220}
 .stage-pill.active{background:#1C3D5F;border-color:#1C3D5F;color:#fff}
 .stage-pill.active b{color:#fff}
 .dur-cards{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
-.dur-card{flex:0 0 auto;background:#F8F6F1;border:1px solid #EFE9DE;border-radius:9px;padding:11px 18px}
+.dur-card{display:flex;align-items:baseline;gap:10px;flex:0 0 auto;background:#F8F6F1;border:1px solid #EFE9DE;border-radius:9px;padding:11px 18px}
 .dur-card.dur-empty{grid-column:1/-1;text-align:center;color:#C9C2B5;font-size:15px;padding:14px}
 .dv-tag{font-size:13px;font-weight:400;opacity:.6;margin-right:2px}
 .dv-arrow{opacity:.5;font-weight:400}
-.dl{font-size:16px;font-weight:600;margin-bottom:3px;color:#9C6414;white-space:nowrap}
+.dl{font-size:16px;font-weight:600;margin-bottom:0;color:#9C6414;white-space:nowrap}
 .dv{font-size:24px;font-weight:800;color:#262220;white-space:nowrap}
 .dt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .dt{width:100%;border-collapse:collapse;font-size:18px;background:#fff;border-radius:10px;overflow:hidden;min-width:1050px;border:1px solid #EFEAE1}
@@ -828,7 +830,8 @@ function histCards(kind){
   if(!shared&&sel&&!cnt[sel]){sel=null;if(isI)hxRegionSel=null;else hxRegK[kind]=null;}
   const pills=`<div class="stage-pills"><span class="hx-prl">본부</span><span class="stage-pill${sel?'':' active'}" onclick="setHxRegion('','${kind}')">전체 <b>${list.length}</b></span>`
     +names.filter(n=>cnt[n]).map(n=>`<span class="stage-pill${sel===n?' active':''}" onclick="setHxRegion('${n}','${kind}')">${n} <b>${cnt[n]}</b></span>`).join('')+`</div>`;
-  let h=(isI?histFixSection(list,info)+`<div class="hx-h" style="margin-top:18px">현장별 처리이력</div>`:'')+(shared?'':pills);
+  let h=(isI?histFixSection(list,info)+`<div class="hx-h" style="margin-top:18px">현장별 처리이력</div>`:'')+(shared||!isI?'':pills);
+  if(!isI&&!shared)window._regBar=pills;
   names.filter(n=>cnt[n]&&(!sel||sel===n)).forEach(n=>{
     h+=`<div class="hx-grp${n===HX_NONE?' none':''}"><div class="hx-grp-h">${n}<span class="n">${cnt[n]}곳</span>${n===HX_NONE?'<span class="n">전화번호로 지역본부를 찾지 못한 현장 — 카드의 지역본부 칸에서 직접 지정하세요</span>':''}</div><div class="hx-grid">${list.filter(r=>info.get(r).region===n).map(r=>histCardHtml(kind,r,info.get(r))).join('')}</div></div>`
   });
@@ -952,7 +955,8 @@ function rChg(){
   const topNames=[HX_NONE,...HX_REGIONS.map(x=>x.n)].filter(n=>rc[n]||cardReg[n]);
   const regPills=`<div class="stage-pills" style="margin:0 0 12px"><span class="hx-prl">본부</span><span class="stage-pill${chgRegSel?'':' active'}" onclick="setChgReg('')">전체 <b>${all.length}</b></span>`
     +topNames.map(n=>`<span class="stage-pill${chgRegSel===n?' active':''}" onclick="setChgReg('${n}')">${n} <b>${rc[n]||cardReg[n]}</b></span>`).join('')+`</div>`;
-  let h=regPills+`<div class="hx-h">처리이력 · 보완내역</div>`+histCards('chg');
+  window._regBar=regPills;
+  let h=`<div class="hx-h">처리이력 · 보완내역</div>`+histCards('chg');
   h+=`<div class="hx-h" style="margin-top:18px">변경 신청 → 승인 소요일수</div>`;
   h+=`<div class="dur-cards">`;
   h+= st?`<div class="dur-card"><div class="dl">건수 (승인완료)</div><div class="dv">${st.cnt}건</div></div>
@@ -1000,6 +1004,9 @@ function rChg(){
 
 function render(){
   const fl=gf(),sites=gs();
+  window._regBar='';
+  const ctHtml=cv==='chg'?rChg():(cv==='app'||cv==='inst')?rHist(cv):rv(fl);
+  const regBar=window._regBar||'';
   const years=getYears();
   const yrTabs=years.map(y=>{
     const btn='<button onclick="chgYear('+y+')" style="padding:4px 14px;border:none;border-radius:16px;font-size:20px;cursor:pointer;font-family:inherit;font-weight:'+(y===selYear?'700':'400')+';background:'+(y===selYear?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.08)')+';color:#fff;margin-right:6px">'+y+'년</button>';
@@ -1025,6 +1032,8 @@ function render(){
     <button class="tab ${cv==='date'?'active':''}" onclick="sv('date')">날짜별</button>
   </div>
   <div class="toolbar">
+    <div class="tb-mid">${regBar}</div>
+    <div class="tb-right">
     <div class="tb-grp">
       ${cv==='chg'?`<button class="btn btn-i" onclick="showHistImp('chg')">📋 처리이력 붙여넣기</button><button class="btn btn-i" onclick="showChgImp()">📋 변경이력 붙여넣기</button><button class="btn btn-p" onclick="showChgAdd()">+ 추가</button>`
       :(cv==='app'||cv==='inst')?`<button class="btn btn-i" onclick="showHistImp('${cv}')">📋 처리이력 붙여넣기</button>`
@@ -1041,9 +1050,10 @@ function render(){
       <button class="btn btn-icon btn-bk" onclick="exportData()" title="데이터 백업">💾 백업</button>
       <button class="btn btn-icon btn-rs" onclick="importBackup()" title="백업 복원">📂 복원</button>
     </div>
+    </div>
   </div>
   <div class="chips" id="chipArea">${(cv==='chg'||cv==='app'||cv==='inst')?'':[...sf].map(s=>'<span class="chip" onclick="removeSite(\''+s.replace(/'/g,"\\'")+'\')">'+esc(labelFor(s))+'<span class="cx">✕</span></span>').join('')}</div>
-  <div class="content" id="ct">${cv==='chg'?rChg():(cv==='app'||cv==='inst')?rHist(cv):rv(fl)}</div>`;
+  <div class="content" id="ct">${ctHtml}</div>`;
   document.getElementById('app').innerHTML=h;
   if(cv==='calendar'){fixCalH();scrollCalToCenter();}
 }
