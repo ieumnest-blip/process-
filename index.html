@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>건물지원사업 진행현황</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Nanum+Gothic:wght@400;700;800&family=Noto+Sans+KR:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 @font-face{font-family:'Kyobo';src:url('KyoboHandwriting2021sjy.ttf') format('truetype')}
@@ -211,11 +211,12 @@ select.hx-yin{width:auto}
 .font-sel{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:15px;padding:3px 6px;border-radius:8px;border:1px solid #3a4f90;background:#1d2c5e;color:#ffd23f;font-weight:700;cursor:pointer}
 body.f1,body.f1 :is(input,select,textarea,button,table,th,td,code){font-family:'Kyobo','Gaegu',sans-serif !important}
 body.f2,body.f2 :is(input,select,textarea,button,table,th,td,code){font-family:'Gaegu','Kyobo',sans-serif !important}
-body.f3,body.f3 :is(input,select,textarea,button,table,th,td,code){font-family:'Nanum Pen Script','Kyobo',sans-serif !important}
-body.f4,body.f4 :is(input,select,textarea,button,table,th,td,code){font-family:'Nanum Gothic','Malgun Gothic',sans-serif !important}
-body.f5,body.f5 :is(input,select,textarea,button,table,th,td,code){font-family:'Noto Sans KR','Malgun Gothic',sans-serif !important}
-body.f4,body.f5{letter-spacing:-.02em}
-body.f3{letter-spacing:.01em;font-size:19px}
+body.f3,body.f3 :is(input,select,textarea,button,table,th,td,code){font-family:'KkakdugiDomyeon','Gaegu','Kyobo',sans-serif !important}
+body.f4,body.f4 :is(input,select,textarea,button,table,th,td,code){font-family:'YeongdeokSea','Gaegu','Kyobo',sans-serif !important}
+body.f5,body.f5 :is(input,select,textarea,button,table,th,td,code){font-family:'SangjuDajeong','Gaegu','Kyobo',sans-serif !important}
+@font-face{font-family:'KkakdugiDomyeon';src:local('깍두기도면체'),local('KkakdugiDomyeon'),url('KkakdugiDomyeon.ttf') format('truetype')}
+@font-face{font-family:'YeongdeokSea';src:local('영덕바다체'),local('YeongdeokSea'),url('YeongdeokSea.ttf') format('truetype')}
+@font-face{font-family:'SangjuDajeong';src:local('상주다정다감체'),local('SangjuDajeong'),url('SangjuDajeong.ttf') format('truetype')}
 /* 소요기간 표: 번호·현장 열을 줄여 칸 안에 최대한 맞춤 */
 .split-pane .dt{min-width:0;font-size:15px}
 .split-pane .dt th{font-size:14px;padding:6px 2px}
@@ -1064,7 +1065,7 @@ function rChg(){
 }
 
 
-const FONTS=[['① 교보 손글씨'],['② 개구 손글씨 (Gaegu)'],['③ 나눔손글씨 펜'],['④ 나눔고딕'],['⑤ 노토 산스']];
+const FONTS=[['① 교보 손글씨'],['② 개구 손글씨 (Gaegu)'],['③ 깍두기도면체'],['④ 영덕바다체'],['⑤ 상주다정다감체']];
 let fontNo=2;try{fontNo=parseInt(localStorage.getItem('bst_font'))||2}catch(e){}
 function applyFont(){document.body.classList.remove('f1','f2','f3','f4','f5');document.body.classList.add('f'+fontNo)}
 window.setFont=v=>{fontNo=parseInt(v)||2;try{localStorage.setItem('bst_font',String(fontNo))}catch(e){}applyFont();placeDocs()};
