@@ -212,10 +212,14 @@ select.hx-yin{width:auto}
 body.f1,body.f1 :is(input,select,textarea,button,table,th,td,code){font-family:'Kyobo','Gaegu',sans-serif !important}
 body.f2,body.f2 :is(input,select,textarea,button,table,th,td,code){font-family:'Gaegu','Kyobo',sans-serif !important}
 body.f3,body.f3 :is(input,select,textarea,button,table,th,td,code){font-family:'KkakdugiDomyeon','Gaegu','Kyobo',sans-serif !important}
+body.f6,body.f6 :is(input,select,textarea,button,table,th,td,code){font-family:'GriunGowoon','Gaegu','Kyobo',sans-serif !important}
+body.f7,body.f7 :is(input,select,textarea,button,table,th,td,code){font-family:'OwnglyphJoori','Gaegu','Kyobo',sans-serif !important}
 body.f4,body.f4 :is(input,select,textarea,button,table,th,td,code){font-family:'YeongdeokSea','Gaegu','Kyobo',sans-serif !important}
 body.f5,body.f5 :is(input,select,textarea,button,table,th,td,code){font-family:'SangjuDajeong','Gaegu','Kyobo',sans-serif !important}
 @font-face{font-family:'KkakdugiDomyeon';src:local('깍두기도면체'),local('KkakdugiDomyeon'),url('KkakdugiDomyeon.ttf') format('truetype')}
 @font-face{font-family:'YeongdeokSea';src:local('영덕바다체'),local('YeongdeokSea'),url('YeongdeokSea.ttf') format('truetype')}
+@font-face{font-family:'GriunGowoon';src:local('그리운X국한박 고운'),url('GriunGowoon.ttf') format('truetype')}
+@font-face{font-family:'OwnglyphJoori';src:local('온글잎 주리손편지'),url('OwnglyphJoori.ttf') format('truetype')}
 @font-face{font-family:'SangjuDajeong';src:local('상주다정다감체'),local('SangjuDajeong'),url('SangjuDajeong.ttf') format('truetype')}
 /* 소요기간 표: 번호·현장 열을 줄여 칸 안에 최대한 맞춤 */
 .split-pane .dt{min-width:0;font-size:15px}
@@ -1063,11 +1067,11 @@ function rChg(){
 }
 
 
-const FONTS=[['① 교보 손글씨','Kyobo'],['② 개구 손글씨 (Gaegu)','Gaegu'],['③ 깍두기도면체','KkakdugiDomyeon'],['④ 영덕바다체','YeongdeokSea'],['⑤ 상주다정다감체','SangjuDajeong']];
+const FONTS=[['① 교보 손글씨','Kyobo'],['② 개구 손글씨 (Gaegu)','Gaegu'],['③ 깍두기도면체','KkakdugiDomyeon'],['④ 영덕바다체','YeongdeokSea'],['⑤ 상주다정다감체','SangjuDajeong'],['⑥ 그리운 고운','GriunGowoon'],['⑦ 온글잎 주리손편지','OwnglyphJoori']];
 function checkFonts(){FONTS.forEach(async f=>{try{const r=await document.fonts.load("16px '"+f[1]+"'","가나다");f.ok=r.length>0}catch(e){f.ok=false}
   const sel=document.getElementById('fontSel');if(sel)[...sel.options].forEach((o,i)=>{o.textContent=FONTS[i][0]+(FONTS[i].ok===false?' (글꼴 파일 없음)':'')})})}
 let fontNo=2;try{fontNo=parseInt(localStorage.getItem('bst_font'))||2}catch(e){}
-function applyFont(){document.body.classList.remove('f1','f2','f3','f4','f5');document.body.classList.add('f'+fontNo)}
+function applyFont(){document.body.classList.remove('f1','f2','f3','f4','f5','f6','f7');document.body.classList.add('f'+fontNo)}
 window.setFont=v=>{fontNo=parseInt(v)||2;try{localStorage.setItem('bst_font',String(fontNo))}catch(e){}applyFont();const se=document.getElementById('fontSel');if(se)se.value=String(fontNo)};
 function render(){
   const fl=gf(),sites=gs();
