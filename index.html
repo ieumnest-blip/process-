@@ -207,7 +207,7 @@ select.hx-yin{width:auto}
 </style>
 </head>
 <body>
-<div id="pwGate"><form class="box" onsubmit="return pwCheck()"><h2>건물지원사업 진행현황</h2><p>암호를 입력하세요</p><input id="pwIn" type="password" inputmode="numeric" autocomplete="off" autofocus><div class="err" id="pwErr"></div><button type="submit">확인</button></form></div>
+<div id="pwGate"><div class="box"><h2>건물지원사업 진행현황</h2><p>암호를 입력하세요</p><input id="pwIn" type="password" inputmode="numeric" autocomplete="off" autofocus onkeydown="if(event.key==='Enter')pwCheck()"><div class="err" id="pwErr"></div><button type="button" onclick="pwCheck()">확인</button></div></div>
 <script>
 (function(){var K='bst_pw_ok';var ok=false;try{ok=localStorage.getItem(K)==='1'}catch(e){}
 var g=document.getElementById('pwGate');if(ok){g.remove();return}
