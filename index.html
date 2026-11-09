@@ -207,6 +207,7 @@ select.hx-yin{width:auto}
 #pwGate input:focus{border-color:#d6453a}#pwGate button{margin-top:14px;width:100%;font-size:17px;padding:10px;border:0;border-radius:10px;background:#d6453a;color:#fff;cursor:pointer}
 #pwGate .err{color:#d6453a;font-size:14px;height:18px;margin-top:8px}
 
+body.docs-mode .toolbar{display:none}
 /* ===== 테마: 현장 서류함 스타일 (남색 제목판 + 노란 글씨, 파란 테두리 카드, 주황 메모) ===== */
 :root{--navy:#22336b;--navy-line:#16224d;--gold:#ffd23f;--accent:#2f6fd0;--accent-soft:#dfeafc;--orange:#e8820c;--line:#c9d6ee}
 body{font-size:17px;line-height:1.45}
@@ -1039,7 +1040,7 @@ function rChg(){
 function render(){
   const fl=gf(),sites=gs();
   window._regBar='';
-  const ctHtml=cv==='chg'?rChg():(cv==='app'||cv==='inst')?rHist(cv):rv(fl);
+  const ctHtml=cv==='docs'?'<iframe src="docs.html" title="서류함" style="display:block;width:100%;height:calc(100vh - 150px);min-height:560px;border:0"></iframe>':cv==='chg'?rChg():(cv==='app'||cv==='inst')?rHist(cv):rv(fl);
   const regBar=window._regBar||'';
   const years=getYears();
   const yrTabs=years.map(y=>{
@@ -1064,6 +1065,7 @@ function render(){
     <button class="tab ${cv==='calendar'?'active':''}" onclick="sv('calendar')">달력</button>
     <button class="tab ${cv==='site'?'active':''}" onclick="sv('site')">현장별</button>
     <button class="tab ${cv==='date'?'active':''}" onclick="sv('date')">날짜별</button>
+    <button class="tab ${cv==='docs'?'active':''}" onclick="sv('docs')">서류함</button>
   </div>
   <div class="toolbar">
     <div class="tb-mid">${regBar}</div>
@@ -1089,6 +1091,7 @@ function render(){
   <div class="chips" id="chipArea">${(cv==='chg'||cv==='app'||cv==='inst')?'':[...sf].map(s=>'<span class="chip" onclick="removeSite(\''+s.replace(/'/g,"\\'")+'\')">'+esc(labelFor(s))+'<span class="cx">✕</span></span>').join('')}</div>
   <div class="content" id="ct">${ctHtml}</div>`;
   document.getElementById('app').innerHTML=h;
+  document.body.classList.toggle('docs-mode',cv==='docs');
   if(cv==='calendar'){fixCalH();scrollCalToCenter();}
 }
 
