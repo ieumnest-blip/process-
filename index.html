@@ -249,7 +249,7 @@ body.f5,body.f5 :is(input,select,textarea,button,table,th,td,code){font-family:'
 .yr-h{font-size:12px;text-align:center;font-weight:700;align-self:center}
 .yr-c{display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;border-radius:6px;line-height:1;min-height:0}
 .yr-c.has{cursor:pointer;font-weight:700;outline:1.5px solid rgba(34,51,107,.25)}
-.yr-c.today{box-shadow:inset 0 0 0 2px #e8820c}
+.yr-leg{display:flex;flex-wrap:wrap;gap:4px 6px;padding:0 10px 2px;max-height:76px;overflow:auto;justify-content:center}.yr-lg{font-size:14px;background:#fff;border:1.5px solid #c9d3e6;border-radius:12px;padding:1px 8px;cursor:pointer;white-space:nowrap}.yr-lg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}.yr-lg.off{opacity:.35}.yr-note{font-size:13px;color:#5c6b86;text-align:center;padding:0 10px 4px}.yr-c sup.tg{font-size:10px;font-weight:800;margin-left:1px;color:#22336b}.yr-c.today{box-shadow:inset 0 0 0 2px #e8820c}
 .yr-c sup{font-size:10px;margin-left:1px;color:#22336b}
 @media(max-width:900px){.yr-wrap{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;height:auto !important}.yr-m{min-height:190px}}
 @media(max-width:560px){.yr-wrap{grid-template-columns:1fr}}
@@ -1332,11 +1332,27 @@ window.showDayEvents=ds=>{
    `</div><div style="text-align:right;margin-top:10px"><button class="btn btn-s" onclick="this.closest('.ov').remove()">닫기</button></div></div>`;
   document.body.appendChild(ov);
 };
+let calSel=null;
+window.pickCalSite=k=>{calSel=(calSel===k?null:k);render();};
+const SPAN_PAL=['#e4572e','#2e86de','#27ae60','#f39c12','#8e44ad','#16a5a5','#d63384','#7f8c2a','#5d6d7e','#c0392b','#1abc9c','#6c5ce7'];
 function rYear(fl){
+  const sites=[...new Set(fl.map(x=>x.site))].sort();
+  const todayD=new Date(),ts=todayD.getFullYear()+'-'+String(todayD.getMonth()+1).padStart(2,'0')+'-'+String(todayD.getDate()).padStart(2,'0');
+  const spans=[];
+  sites.forEach((st,i)=>{
+    const ev=fl.filter(x=>x.site===st).sort((a,b)=>a.date<b.date?-1:1);
+    const sub=ev.find(x=>x.type==='신청서 제출')||ev[0];
+    const ok=ev.find(x=>x.type==='신청서 검토'&&x.result==='적합');
+    const start=sub.date;let end=ok?ok.date:null;
+    spans.push({site:st,color:SPAN_PAL[i%SPAN_PAL.length],start,end,eff:end||(ts>=start?ts:start),done:!!ok});
+  });
   const hasEv={};fl.forEach(x=>{(hasEv[x.date]=hasEv[x.date]||[]).push(x)});
-  const today=new Date(),ts=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  const md=d=>+d.slice(5,7)+'/'+ +d.slice(8,10);
+  const vis=spans.filter(sp=>!calSel||sp.site===calSel);
   let h=`<div class="cal-nav"><button class="btn btn-s" onclick="cyp()">◀</button><span class="cal-title">${cy}년</span><button class="btn btn-s" onclick="cyn()">▶</button>
-    <button class="btn btn-s" style="margin-left:14px" onclick="setCalMode('month')">월 보기</button></div><div class="yr-wrap" id="yr-wrap">`;
+    <button class="btn btn-s" style="margin-left:14px" onclick="setCalMode('month')">월 보기</button></div>
+    <div class="yr-leg">`+spans.map(sp=>`<span class="yr-lg${calSel&&calSel!==sp.site?' off':''}" onclick="pickCalSite('${sp.site.replace(/'/g,"\\'")}')" title="${esc(sp.site)}"><i style="background:${sp.color}"></i>${esc(labelFor(sp.site))} <b>${md(sp.start)}→${sp.done?md(sp.end):'진행중'}</b></span>`).join('')+
+    `</div><div class="yr-note">색 띠 = 신청서 제출일 ~ 신청서 검토 적합일 (달이 넘어가도 이어짐, 겹치는 현장이 많을수록 진한 파랑) · <u>신</u>=신청일 · <u>적</u>=적합일 · 점선=아직 적합 전 · 현장 칩을 누르면 그 현장만 강조</div><div class="yr-wrap" id="yr-wrap">`;
   for(let m=0;m<12;m++){
     const fd=new Date(cy,m,1).getDay(),dim=new Date(cy,m+1,0).getDate(),hol=getHol(cy,m);
     h+=`<div class="yr-m"><div class="yr-t" onclick="cm=${m};setCalMode('month')" title="눌러서 이 달만 크게 보기">${MS[m]}</div><div class="yr-g">`;
@@ -1344,11 +1360,17 @@ function rYear(fl){
     for(let i=0;i<fd;i++)h+='<div></div>';
     for(let d=1;d<=dim;d++){
       const ds=cy+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),dow=(fd+d-1)%7,ev=hasEv[ds]||[];
-      let bg='',tx=hol[d]||dow===0?'#d6453a':dow===6?'#22336b':'#1c2a4a';
-      if(ev.length){const rs=ev.map(e=>e.result);const k=rs.includes('반려')?'r':rs.includes('보완요청')?'o':rs.includes('적합')?'g':'b';
-        bg={r:'#fdeaea',o:'#fff1dc',g:'#e2f4e8',b:'#E4F0F6'}[k];}
-      const tip=[hol[d]].concat(ev.map(e=>labelFor(e.site)+' '+shortType(e.type)+(e.result?' '+e.result:''))).filter(Boolean).join('\n');
-      h+=`<div class="yr-c${ds===ts?' today':''}${ev.length?' has':''}" style="${bg?'background:'+bg+';':''}color:${tx}"${tip?` title="${esc(tip)}"`:''}${ev.length?` onclick="showDayEvents('${ds}')"`:''}>${d}${ev.length>1?`<sup>${ev.length}</sup>`:''}</div>`;
+      const tx=hol[d]||dow===0?'#d6453a':dow===6?'#22336b':'#1c2a4a';
+      const cov=vis.filter(sp=>ds>=sp.start&&ds<=sp.eff);
+      let bg='';
+      if(cov.length===1)bg=cov[0].color+(cov[0].done||ds<cov[0].eff?'55':'30');
+      else if(cov.length>1){bg='rgba(46,110,146,'+Math.min(.18+.06*cov.length,.7).toFixed(2)+')';}
+      const st=vis.filter(sp=>sp.start===ds),en=vis.filter(sp=>sp.end===ds);
+      const tag=(st.length?'신':'')+(en.length?'적':'');
+      const bd=st.length?st[0].color:en.length?en[0].color:'';
+      const ongo=cov.length&&!cov.every(sp=>sp.done||ds<sp.eff)?'':'';
+      const tip=[hol[d]].concat(ev.filter(e=>!calSel||e.site===calSel).map(e=>labelFor(e.site)+' '+shortType(e.type)+(e.result?' '+e.result:''))).filter(Boolean).join('\n');
+      h+=`<div class="yr-c${ds===ts?' today':''}${ev.length?' has':''}" style="${bg?'background:'+bg+';':''}${bd?'box-shadow:inset 0 0 0 2px '+bd+';':''}color:${tx}"${tip?` title="${esc(tip)}"`:''}${ev.length?` onclick="showDayEvents('${ds}')"`:''}>${d}${tag?`<sup class="tg">${tag}</sup>`:''}</div>`;
     }
     h+='</div></div>';
   }
@@ -1357,7 +1379,7 @@ function rYear(fl){
 window.fixYearH=function(){
   const w=document.getElementById('yr-wrap');if(!w)return;
   const top=w.getBoundingClientRect().top;
-  w.style.height=Math.max(420,window.innerHeight-top-28)+'px';
+  w.style.height=Math.max(420,window.innerHeight-top-14)+'px';
 };
 function rCal(fl){
   if(calMode==='year')return rYear(fl);
