@@ -241,6 +241,18 @@ body.f5,body.f5 :is(input,select,textarea,button,table,th,td,code){font-family:'
 .split-pane .dt td .memo-cell{font-size:12px;white-space:normal;max-width:70px;display:inline-block}
 .split-pane .dt td{overflow-wrap:anywhere}
 .split-pane .dt td:nth-child(2){overflow-wrap:normal}
+
+.yr-wrap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:8px;padding:0 8px 8px}
+.yr-m{border:2px solid #2f6fd0;border-radius:12px;background:#fff;padding:4px 6px 6px;display:flex;flex-direction:column;min-height:0;min-width:0}
+.yr-t{font-size:19px;font-weight:700;color:#22336b;text-align:center;cursor:pointer;line-height:1.2}
+.yr-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);flex:1;min-height:0;gap:1px}
+.yr-h{font-size:12px;text-align:center;font-weight:700;align-self:center}
+.yr-c{display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;border-radius:6px;line-height:1;min-height:0}
+.yr-c.has{cursor:pointer;font-weight:700;outline:1.5px solid rgba(34,51,107,.25)}
+.yr-c.today{box-shadow:inset 0 0 0 2px #e8820c}
+.yr-c sup{font-size:10px;margin-left:1px;color:#22336b}
+@media(max-width:900px){.yr-wrap{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;height:auto !important}.yr-m{min-height:190px}}
+@media(max-width:560px){.yr-wrap{grid-template-columns:1fr}}
 /* ===== 테마: 현장 서류함 스타일 (남색 제목판 + 노란 글씨, 파란 테두리 카드, 주황 메모) ===== */
 :root{--navy:#22336b;--navy-line:#16224d;--gold:#ffd23f;--accent:#2f6fd0;--accent-soft:#dfeafc;--orange:#e8820c;--line:#c9d6ee}
 body{font-size:17px;line-height:1.45}
@@ -1131,7 +1143,7 @@ function render(){
   <div class="content" id="ct">${ctHtml}</div>`;
   document.getElementById('app').innerHTML=h;
   applyFont();checkFonts();
-  if(cv==='calendar'){fixCalH();scrollCalToCenter();}
+  if(cv==='calendar'){fixCalH();fixYearH();scrollCalToCenter();}
 }
 
 function rv(fl){
@@ -1308,7 +1320,47 @@ function rDur(){
   return splitView(panel(1,'#e8820c'),panel(2,'#22336b'));
 }
 
+let calMode='year';try{calMode=localStorage.getItem('bst_calmode')||'year'}catch(e){}
+window.setCalMode=m=>{calMode=m;try{localStorage.setItem('bst_calmode',m)}catch(e){}render();};
+window.cyp=()=>{cy--;render();};window.cyn=()=>{cy++;render();};
+window.showDayEvents=ds=>{
+  const ev=data.filter(x=>x.date===ds);if(!ev.length)return;
+  const ov=document.createElement('div');ov.className='ov';ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="modal"><h3>${ds.replace(/-/g,'.')} 일정 ${ev.length}건</h3><div style="display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow:auto">`+
+   ev.map(e=>{const bg=e.result==='적합'?'#e2f4e8':e.result==='보완요청'?'#fff1dc':e.result==='반려'?'#fdeaea':'#E4F0F6';
+     return `<div class="cal-ev" style="background:${bg};white-space:normal;font-size:18px;padding:6px 8px" onclick="this.closest('.ov').remove();showEdit(${e.id})">${esc(labelFor(e.site))} ${esc(shortType(e.type))}${e.result?' · '+esc(e.result):''}</div>`}).join('')+
+   `</div><div style="text-align:right;margin-top:10px"><button class="btn btn-s" onclick="this.closest('.ov').remove()">닫기</button></div></div>`;
+  document.body.appendChild(ov);
+};
+function rYear(fl){
+  const hasEv={};fl.forEach(x=>{(hasEv[x.date]=hasEv[x.date]||[]).push(x)});
+  const today=new Date(),ts=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  let h=`<div class="cal-nav"><button class="btn btn-s" onclick="cyp()">◀</button><span class="cal-title">${cy}년</span><button class="btn btn-s" onclick="cyn()">▶</button>
+    <button class="btn btn-s" style="margin-left:14px" onclick="setCalMode('month')">월 보기</button></div><div class="yr-wrap" id="yr-wrap">`;
+  for(let m=0;m<12;m++){
+    const fd=new Date(cy,m,1).getDay(),dim=new Date(cy,m+1,0).getDate(),hol=getHol(cy,m);
+    h+=`<div class="yr-m"><div class="yr-t" onclick="cm=${m};setCalMode('month')" title="눌러서 이 달만 크게 보기">${MS[m]}</div><div class="yr-g">`;
+    WD.forEach((d,i)=>{h+=`<div class="yr-h" style="color:${i===0?'#d6453a':i===6?'#22336b':'#5c6b86'}">${d}</div>`;});
+    for(let i=0;i<fd;i++)h+='<div></div>';
+    for(let d=1;d<=dim;d++){
+      const ds=cy+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),dow=(fd+d-1)%7,ev=hasEv[ds]||[];
+      let bg='',tx=hol[d]||dow===0?'#d6453a':dow===6?'#22336b':'#1c2a4a';
+      if(ev.length){const rs=ev.map(e=>e.result);const k=rs.includes('반려')?'r':rs.includes('보완요청')?'o':rs.includes('적합')?'g':'b';
+        bg={r:'#fdeaea',o:'#fff1dc',g:'#e2f4e8',b:'#E4F0F6'}[k];}
+      const tip=[hol[d]].concat(ev.map(e=>labelFor(e.site)+' '+shortType(e.type)+(e.result?' '+e.result:''))).filter(Boolean).join('\n');
+      h+=`<div class="yr-c${ds===ts?' today':''}${ev.length?' has':''}" style="${bg?'background:'+bg+';':''}color:${tx}"${tip?` title="${esc(tip)}"`:''}${ev.length?` onclick="showDayEvents('${ds}')"`:''}>${d}${ev.length>1?`<sup>${ev.length}</sup>`:''}</div>`;
+    }
+    h+='</div></div>';
+  }
+  return h+'</div>';
+}
+window.fixYearH=function(){
+  const w=document.getElementById('yr-wrap');if(!w)return;
+  const top=w.getBoundingClientRect().top;
+  w.style.height=Math.max(420,window.innerHeight-top-28)+'px';
+};
 function rCal(fl){
+  if(calMode==='year')return rYear(fl);
   // render 4 months: cm-1, cm, cm+1, cm+2
   const months=[];
   for(let i=-1;i<=2;i++){
@@ -1321,6 +1373,7 @@ function rCal(fl){
     <button class="btn btn-s" onclick="cp()">◀</button>
     <span class="cal-title">${cy}년 ${MS[cm]}</span>
     <button class="btn btn-s" onclick="cn()">▶</button>
+    <button class="btn btn-s" style="margin-left:14px" onclick="setCalMode('year')">1년 보기</button>
   </div><div class="cal-scroll" id="cal-sc"><div class="cal-wrap">`;
   months.forEach(({y,m})=>{h+=rMon(y,m,fl);});
   h+='</div></div>';
@@ -1758,7 +1811,7 @@ window.addChg=()=>{
   document.querySelector('.ov').remove();saveAll();render();
 };
 
-window.addEventListener('resize',()=>{if(cv==='calendar'){fixCalH();scrollCalToCenter();}});
+window.addEventListener('resize',()=>{if(cv==='calendar'){fixCalH();fixYearH();scrollCalToCenter();}});
 window.addEventListener('keydown',e=>{
   if(e.key!=='Escape'||document.querySelector('.ov'))return;
   if(selectedRows.size>0){selectedRows.clear();render();return;}
