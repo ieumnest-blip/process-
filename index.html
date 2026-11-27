@@ -344,6 +344,11 @@ body.f10,body.f10 :is(input,select,textarea,button,table,th,td,code){font-family
 .hx-regs .stage-pill{border:none !important;background:none !important;border-radius:0 !important;border-bottom:3px solid transparent !important;font-size:16px;font-weight:500;color:#5c6b86 !important;padding:2px 9px !important;box-shadow:none !important}
 .hx-regs .stage-pill b{color:#e8820c}
 .hx-regs .stage-pill.active{border-bottom-color:#e8820c !important;color:#22336b !important;font-weight:700}
+
+.header{z-index:300}.gear-menu{position:absolute;right:10px;top:calc(100% - 6px);z-index:50;background:#fff;color:#1c2a4a;border:2px solid #22336b;border-radius:12px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.25);min-width:250px}
+.gm-t{font-size:14px;font-weight:700;color:#5c6b86;margin:4px 0}
+.gm-r{display:flex;gap:6px}
+.gear-menu .font-sel{position:static !important;transform:none !important;display:block !important;width:100%;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -1245,7 +1250,7 @@ window.tabDP=e=>{e.preventDefault();const el=e.currentTarget,to=el.dataset.k,fro
   const ks=tabOrder().map(t=>t.k).filter(k=>k!==from);let i=ks.indexOf(to);if(after)i++;ks.splice(i,0,from);
   try{localStorage.setItem('bst_taborder',JSON.stringify(ks))}catch(x){}_tabDrag=null;render();};
 window.fixGuideH=function(){const f=document.getElementById('guideFrame');if(!f)return;f.style.height=Math.max(400,window.innerHeight-f.getBoundingClientRect().top-6)+'px';};
-window.toggleFontSel=()=>{window._fsOpen=!window._fsOpen;const e=document.getElementById('fontSel');if(e)e.style.display=window._fsOpen?'block':'none';};
+window.toggleFontSel=()=>{window._fsOpen=!window._fsOpen;const e=document.getElementById('gearMenu');if(e)e.style.display=window._fsOpen?'block':'none';};
 function render(){
   if(cv==='date')cv='duration';
   const fl=gf(),sites=gs();
@@ -1256,7 +1261,7 @@ function render(){
   const showYr=!(cv==='calendar'||cv==='guide');
   const yrBar=showYr?`<div class="tb-left">${years.map(y=>`<button class="yp${y===selYear?' on':''}" onclick="chgYear(${y})">${y}년</button>`).join('')}<span class="yp-sep"></span>${[0,1,2].map(r=>`<button class="rp${r===selRound?' on':''}" onclick="chgRound(${r})">${r===0?'전체':r+'차'}</button>`).join('')}</div>`:'';
   let h=`<div class="header"><div class="hd-l">${siteTitleImg?`<img class="site-title-img" ondblclick="openDataMenu()" src="${siteTitleImg}" alt="${esc(siteTitle)}" title="${esc(siteTitle)}">`:`<div class="site-title" ondblclick="openDataMenu()" style="color:${siteTitleColor}" contenteditable="true" spellcheck="false" title="눌러서 제목 수정 (Enter로 저장) · 더블클릭: 데이터 입력" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onblur="setSiteTitle(this.textContent);this.textContent=siteTitle">${esc(siteTitle)}</div>`}<span class="hd-tools"><label class="hd-t" title="제목 글자색 바꾸기">🎨<input type="color" value="${siteTitleColor}" oninput="setTitleColor(this.value,false)" onchange="setTitleColor(this.value,true)"></label><button class="hd-t" onclick="pickTitleImg()" title="이미지로 제목 넣기">🖼</button>${siteTitleImg?'<button class="hd-t" onclick="clearTitleImg()" title="이미지 빼고 글자 제목으로">✕</button>':''}</span></div><button class="gear" onclick="toggleFontSel()" title="글꼴 설정">⚙</button>
-  <select id="fontSel" class="font-sel" style="display:${window._fsOpen?'block':'none'}" onchange="setFont(this.value)" title="글꼴 바꾸기">${FONTS.map((f,i)=>`<option value="${i+1}"${String(fontNo)===String(i+1)?' selected':''}>${f[0]}${f.ok===false?' (글꼴 파일 없음)':''}</option>`).join('')}</select>
+  <div id="gearMenu" class="gear-menu" style="display:${window._fsOpen?'block':'none'}"><div class="gm-t">글꼴</div><select id="fontSel" class="font-sel" onchange="setFont(this.value)" title="글꼴 바꾸기">${FONTS.map((f,i)=>`<option value="${i+1}"${String(fontNo)===String(i+1)?' selected':''}>${f[0]}${f.ok===false?' (글꼴 파일 없음)':''}</option>`).join('')}</select><div class="gm-t">데이터 보관</div><div class="gm-r"><button class="btn btn-icon btn-bk" onclick="exportData()" title="데이터 백업 파일로 저장">💾 백업</button><button class="btn btn-icon btn-rs" onclick="importBackup()" title="백업 파일로 복원">📂 복원</button></div></div>
   ${selStage?`<div style="text-align:center;margin-top:12px;font-size:18px;color:#F3C39F">'${selStage}' 단계만 보는 중 · <span style="cursor:pointer;text-decoration:underline" onclick="clearStage()">필터 해제</span></div>`:''}
   </div>
   <div class="tabs">
@@ -1271,11 +1276,6 @@ function render(){
       <div class="search-drop" id="searchDrop"></div>
     </div>
     <button class="btn btn-s" onclick="clearFilter()" style="${sf.size?'':'display:none'}">초기화</button>`}
-    <div class="tb-sep"></div>
-    <div class="tb-grp">
-      <button class="btn btn-icon btn-bk" onclick="exportData()" title="데이터 백업">💾 백업</button>
-      <button class="btn btn-icon btn-rs" onclick="importBackup()" title="백업 복원">📂 복원</button>
-    </div>
     </div>
   </div>
   <div class="chips" id="chipArea">${(cv==='chg'||cv==='app'||cv==='inst')?'':[...sf].map(s=>'<span class="chip" onclick="removeSite(\''+s.replace(/'/g,"\\'")+'\')">'+esc(labelFor(s))+'<span class="cx">✕</span></span>').join('')}</div>
