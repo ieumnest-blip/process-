@@ -270,6 +270,8 @@ body.f5,body.f5 :is(input,select,textarea,button,table,th,td,code){font-family:'
 .gt-mk{position:absolute;top:50%;width:11px;height:11px;margin:-5px 0 0 -5px;border-radius:50%;border:2px solid #fff;cursor:pointer;z-index:2}
 .gt-today{display:none;position:absolute;top:26px;bottom:0;width:0;border-left:2px solid #e8820c;pointer-events:none;z-index:3}
 @media(max-width:700px){.gt-name{flex-basis:86px;font-size:13px}}
+
+.tab{user-select:none}.tab.drop-l{box-shadow:inset 4px 0 0 #e8820c}.tab.drop-r{box-shadow:inset -4px 0 0 #e8820c}
 /* ===== 테마: 현장 서류함 스타일 (남색 제목판 + 노란 글씨, 파란 테두리 카드, 주황 메모) ===== */
 :root{--navy:#22336b;--navy-line:#16224d;--gold:#ffd23f;--accent:#2f6fd0;--accent-soft:#dfeafc;--orange:#e8820c;--line:#c9d6ee}
 body{font-size:17px;line-height:1.45}
@@ -1106,10 +1108,24 @@ function checkFonts(){FONTS.forEach(async f=>{try{const r=await document.fonts.l
 let fontNo=2;try{fontNo=parseInt(localStorage.getItem('bst_font'))||2}catch(e){}
 function applyFont(){document.body.classList.remove('f1','f2','f3','f4','f5','f6','f7','f8','f9');document.body.classList.add('f'+fontNo)}
 window.setFont=v=>{fontNo=parseInt(v)||2;try{localStorage.setItem('bst_font',String(fontNo))}catch(e){}applyFont();const se=document.getElementById('fontSel');if(se)se.value=String(fontNo)};
+const TAB_DEF=[{k:'duration',l:'소요기간'},{k:'app',l:'사업신청'},{k:'chg',l:'사업변경'},{k:'inst',l:'설치확인'},{k:'calendar',l:'달력'},{k:'site',l:'현장별'},{k:'guide',l:'설치확인 가이드라인'}];
+function tabOrder(){let o=[];try{o=JSON.parse(localStorage.getItem('bst_taborder')||'[]')}catch(e){}
+  const m=Object.fromEntries(TAB_DEF.map(t=>[t.k,t]));const r=[];o.forEach(k=>{if(m[k]){r.push(m[k]);delete m[k]}});TAB_DEF.forEach(t=>{if(m[t.k])r.push(t)});return r;}
+let _tabDrag=null;
+window.tabDS=e=>{_tabDrag=e.currentTarget.dataset.k;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',_tabDrag)}catch(x){}e.currentTarget.style.opacity='.5';};
+window.tabDO=e=>{if(!_tabDrag)return;e.preventDefault();e.dataTransfer.dropEffect='move';const el=e.currentTarget,r=el.getBoundingClientRect();el.classList.toggle('drop-l',e.clientX<r.left+r.width/2);el.classList.toggle('drop-r',e.clientX>=r.left+r.width/2);};
+window.tabDL=e=>{e.currentTarget.classList.remove('drop-l','drop-r');};
+window.tabDE=e=>{_tabDrag=null;e.currentTarget.style.opacity='';document.querySelectorAll('.tab').forEach(x=>x.classList.remove('drop-l','drop-r'));};
+window.tabDP=e=>{e.preventDefault();const el=e.currentTarget,to=el.dataset.k,from=_tabDrag;if(!from||from===to)return;
+  const r=el.getBoundingClientRect(),after=e.clientX>=r.left+r.width/2;
+  const ks=tabOrder().map(t=>t.k).filter(k=>k!==from);let i=ks.indexOf(to);if(after)i++;ks.splice(i,0,from);
+  try{localStorage.setItem('bst_taborder',JSON.stringify(ks))}catch(x){}_tabDrag=null;render();};
+window.fixGuideH=function(){const f=document.getElementById('guideFrame');if(!f)return;f.style.height=Math.max(400,window.innerHeight-f.getBoundingClientRect().top-6)+'px';};
 function render(){
+  if(cv==='date')cv='duration';
   const fl=gf(),sites=gs();
   window._regBar='';
-  const ctHtml=cv==='chg'?rChg():(cv==='app'||cv==='inst')?rHist(cv):rv(fl);
+  const ctHtml=cv==='guide'?'<iframe id="guideFrame" src="guide.html" style="width:100%;border:0;border-radius:10px;background:#fff" title="설치확인 가이드라인"></iframe>':cv==='chg'?rChg():(cv==='app'||cv==='inst')?rHist(cv):rv(fl);
   const regBar=window._regBar||'';
   const years=getYears();
   const yrTabs=years.map(y=>{
@@ -1127,13 +1143,7 @@ function render(){
   ${selStage?`<div style="text-align:center;margin-top:12px;font-size:18px;color:#F3C39F">'${selStage}' 단계만 보는 중 · <span style="cursor:pointer;text-decoration:underline" onclick="clearStage()">필터 해제</span></div>`:''}
   </div>
   <div class="tabs">
-    <button class="tab ${cv==='duration'?'active':''}" onclick="sv('duration')">소요기간</button>
-    <button class="tab ${cv==='app'?'active':''}" onclick="sv('app')">사업신청</button>
-    <button class="tab ${cv==='chg'?'active':''}" onclick="sv('chg')">사업변경</button>
-    <button class="tab ${cv==='inst'?'active':''}" onclick="sv('inst')">설치확인</button>
-    <button class="tab ${cv==='calendar'?'active':''}" onclick="sv('calendar')">달력</button>
-    <button class="tab ${cv==='site'?'active':''}" onclick="sv('site')">현장별</button>
-    <button class="tab ${cv==='date'?'active':''}" onclick="sv('date')">날짜별</button>
+    ${tabOrder().map(t=>`<button class="tab ${cv===t.k?'active':''}" draggable="true" data-k="${t.k}" onclick="sv('${t.k}')" ondragstart="tabDS(event)" ondragover="tabDO(event)" ondragleave="tabDL(event)" ondrop="tabDP(event)" ondragend="tabDE(event)" title="끌어서 순서 변경">${t.l}</button>`).join('')}
   </div>
   <div class="toolbar">
     <div class="tb-mid">${regBar}</div>
@@ -1160,6 +1170,7 @@ function render(){
   <div class="content" id="ct">${ctHtml}</div>`;
   document.getElementById('app').innerHTML=h;
   applyFont();checkFonts();
+  if(cv==='guide'){document.querySelectorAll('.toolbar,.chips').forEach(x=>x.style.display='none');fixGuideH();}
   if(cv==='calendar'){fixCalH();fixYearH();scrollCalToCenter();}
 }
 
@@ -1894,7 +1905,7 @@ window.addChg=()=>{
   document.querySelector('.ov').remove();saveAll();render();
 };
 
-window.addEventListener('resize',()=>{if(cv==='calendar'){fixCalH();fixYearH();scrollCalToCenter();}});
+window.addEventListener('resize',()=>{if(cv==='guide')fixGuideH();if(cv==='calendar'){fixCalH();fixYearH();scrollCalToCenter();}});
 window.addEventListener('keydown',e=>{
   if(e.key!=='Escape'||document.querySelector('.ov'))return;
   if(selectedRows.size>0){selectedRows.clear();render();return;}
