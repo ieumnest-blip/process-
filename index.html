@@ -253,6 +253,23 @@ body.f5,body.f5 :is(input,select,textarea,button,table,th,td,code){font-family:'
 .yr-c sup{font-size:10px;margin-left:1px;color:#22336b}
 @media(max-width:900px){.yr-wrap{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;height:auto !important}.yr-m{min-height:190px}}
 @media(max-width:560px){.yr-wrap{grid-template-columns:1fr}}
+
+.gt-note{font-size:13px;color:#5c6b86;text-align:center;padding:0 10px 4px}
+.gt-wrap{position:relative;margin:0 10px;border:2px solid #2f6fd0;border-radius:12px;background:#fff;display:flex;flex-direction:column;overflow:hidden}
+.gt-head,.gt-row{display:flex;align-items:stretch}
+.gt-head{height:26px;border-bottom:2px solid #2f6fd0;background:#eef3fb}
+.gt-name{flex:0 0 200px;font-size:15px;font-weight:700;color:#22336b;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;border-right:1px solid #c9d3e6}
+.gt-area{position:relative;flex:1;min-width:0;background-image:repeating-linear-gradient(90deg,transparent 0,transparent calc(100%/12 - 1px),#d9e1f0 calc(100%/12 - 1px),#d9e1f0 calc(100%/12))}
+.gt-head .gt-area{background:none}
+.gt-mh{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#22336b}
+.gt-body{flex:1;min-height:0}
+.gt-row{border-bottom:1px dashed #e3e9f4}
+.gt-bar{position:absolute;top:18%;height:64%;border-radius:6px;cursor:pointer;min-width:6px;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.gt-bar.ing{opacity:.75;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 5px,transparent 5px 10px)!important;border:2px dashed rgba(0,0,0,.35)}
+.gt-lb{position:absolute;top:0;bottom:0;display:flex;align-items:center;font-size:14px;font-weight:700;color:#1c2a4a;white-space:nowrap;pointer-events:none}
+.gt-mk{position:absolute;top:50%;width:11px;height:11px;margin:-5px 0 0 -5px;border-radius:50%;border:2px solid #fff;cursor:pointer;z-index:2}
+.gt-today{display:none;position:absolute;top:26px;bottom:0;width:0;border-left:2px solid #e8820c;pointer-events:none;z-index:3}
+@media(max-width:700px){.gt-name{flex-basis:86px;font-size:13px}}
 /* ===== 테마: 현장 서류함 스타일 (남색 제목판 + 노란 글씨, 파란 테두리 카드, 주황 메모) ===== */
 :root{--navy:#22336b;--navy-line:#16224d;--gold:#ffd23f;--accent:#2f6fd0;--accent-soft:#dfeafc;--orange:#e8820c;--line:#c9d6ee}
 body{font-size:17px;line-height:1.45}
@@ -1321,7 +1338,7 @@ function rDur(){
 }
 
 let calMode='year';try{calMode=localStorage.getItem('bst_calmode')||'year'}catch(e){}
-window.setCalMode=m=>{calMode=m;try{localStorage.setItem('bst_calmode',m)}catch(e){}render();};
+window.setCalMode=m=>{if(m==='gantt'||m==='year'){calYr=m;m='year';}calMode=m;try{localStorage.setItem('bst_calmode',m)}catch(e){}render();};
 window.cyp=()=>{cy--;render();};window.cyn=()=>{cy++;render();};
 window.showDayEvents=ds=>{
   const ev=data.filter(x=>x.date===ds);if(!ev.length)return;
@@ -1332,10 +1349,10 @@ window.showDayEvents=ds=>{
    `</div><div style="text-align:right;margin-top:10px"><button class="btn btn-s" onclick="this.closest('.ov').remove()">닫기</button></div></div>`;
   document.body.appendChild(ov);
 };
-let calSel=null;
+let calSel=null,calYr='gantt';
 window.pickCalSite=k=>{calSel=(calSel===k?null:k);render();};
 const SPAN_PAL=['#e4572e','#2e86de','#27ae60','#f39c12','#8e44ad','#16a5a5','#d63384','#7f8c2a','#5d6d7e','#c0392b','#1abc9c','#6c5ce7'];
-function rYear(fl){
+function rYearCal(fl){
   const sites=[...new Set(fl.map(x=>x.site))].sort();
   const todayD=new Date(),ts=todayD.getFullYear()+'-'+String(todayD.getMonth()+1).padStart(2,'0')+'-'+String(todayD.getDate()).padStart(2,'0');
   const spans=[];
@@ -1350,7 +1367,7 @@ function rYear(fl){
   const md=d=>+d.slice(5,7)+'/'+ +d.slice(8,10);
   const vis=spans.filter(sp=>!calSel||sp.site===calSel);
   let h=`<div class="cal-nav"><button class="btn btn-s" onclick="cyp()">◀</button><span class="cal-title">${cy}년</span><button class="btn btn-s" onclick="cyn()">▶</button>
-    <button class="btn btn-s" style="margin-left:14px" onclick="setCalMode('month')">월 보기</button></div>
+    <button class="btn btn-s" style="margin-left:14px" onclick="setCalMode('month')">월 보기</button><button class="btn btn-s" onclick="setCalMode('gantt')">📊 기간표</button></div>
     <div class="yr-leg">`+spans.map(sp=>`<span class="yr-lg${calSel&&calSel!==sp.site?' off':''}" onclick="pickCalSite('${sp.site.replace(/'/g,"\\'")}')" title="${esc(sp.site)}"><i style="background:${sp.color}"></i>${esc(labelFor(sp.site))} <b>${md(sp.start)}→${sp.done?md(sp.end):'진행중'}</b></span>`).join('')+
     `</div><div class="yr-note">색 띠 = 신청서 제출일 ~ 신청서 검토 적합일 (달이 넘어가도 이어짐, 겹치는 현장이 많을수록 진한 파랑) · <u>신</u>=신청일 · <u>적</u>=적합일 · 점선=아직 적합 전 · 현장 칩을 누르면 그 현장만 강조</div><div class="yr-wrap" id="yr-wrap">`;
   for(let m=0;m<12;m++){
@@ -1376,10 +1393,54 @@ function rYear(fl){
   }
   return h+'</div>';
 }
+
+function rGantt(fl){
+  const sites=[...new Set(fl.map(x=>x.site))];
+  const td=new Date(),ts=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
+  const y0=new Date(cy,0,1).getTime(),y1=new Date(cy+1,0,1).getTime(),T=y1-y0;
+  const tm=d=>new Date(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10)).getTime();
+  const pct=d=>Math.max(0,Math.min(100,(tm(d)-y0)/T*100));
+  const md=d=>+d.slice(5,7)+'/'+ +d.slice(8,10);
+  const rows=sites.map((st,i)=>{
+    const ev=fl.filter(x=>x.site===st).sort((a,b)=>a.date<b.date?-1:1);
+    const sub=ev.find(x=>x.type==='신청서 제출')||ev[0];
+    const ok=ev.find(x=>x.type==='신청서 검토'&&x.result==='적합');
+    let start=sub.date;const end=ok?ok.date:null;if(end&&end<start)start=ev[0].date;const eff=end||(ts>=start?ts:start);
+    return{site:st,ev,start,end,eff,done:!!ok,days:Math.round((tm(eff)-tm(start))/864e5)};
+  }).filter(r=>r.eff>=cy+'-01-01'&&r.start<=cy+'-12-31').sort((a,b)=>a.start<b.start?-1:a.start>b.start?1:(a.eff<b.eff?-1:1));
+  let h=`<div class="cal-nav"><button class="btn btn-s" onclick="cyp()">◀</button><span class="cal-title">${cy}년</span><button class="btn btn-s" onclick="cyn()">▶</button>
+   <button class="btn btn-s" style="margin-left:14px" onclick="setCalMode('month')">월 보기</button><button class="btn btn-s" onclick="setCalMode('year')">🗓 달력형</button></div>
+   <div class="gt-note">막대 = 신청서 제출일 → 신청서 검토 적합일 (막대 오른쪽에 날짜·소요일) · 점선 막대 = 아직 적합 전(오늘까지) · 🟠=보완요청 🔴=반려 표시 · 막대 클릭=그 현장 일정</div>
+   <div class="gt-wrap" id="yr-wrap"><div class="gt-head"><div class="gt-name"></div><div class="gt-area">`;
+  for(let m=0;m<12;m++)h+=`<div class="gt-mh" style="left:${pct(cy+'-'+String(m+1).padStart(2,'0')+'-01')}%;width:${100/12}%">${m+1}월</div>`;
+  h+=`</div></div><div class="gt-body">`;
+  rows.forEach((r,i)=>{
+    const col=SPAN_PAL[i%SPAN_PAL.length],l=pct(r.start),w=Math.max(.5,pct(r.eff)-l);
+    const mk=r.ev.filter(e=>e.result==='보완요청'||e.result==='반려').map(e=>`<b class="gt-mk" style="left:${pct(e.date)}%;background:${e.result==='반려'?'#d6453a':'#f39c12'}" title="${esc(e.date+' '+shortType(e.type)+' '+e.result)}" onclick="event.stopPropagation();showEdit(${e.id})"></b>`).join('');
+    const label=`${md(r.start)} → ${r.done?md(r.end):'진행중'} (${r.days}일)`;
+    const right=l+w>62;
+    h+=`<div class="gt-row"><div class="gt-name" title="${esc(r.site)}">${esc(labelFor(r.site))}</div><div class="gt-area">
+      <div class="gt-bar${r.done?'':' ing'}" style="left:${l}%;width:${w}%;background:${col}" onclick="showSiteEvents('${r.site.replace(/'/g,"\\'")}')">${mk}</div>
+      <span class="gt-lb" style="${right?'right:'+(100-l)+'%;padding-right:6px':'left:'+(l+w)+'%;padding-left:6px'}">${label}</span></div></div>`;
+  });
+  return h+`</div><div class="gt-today" id="gt-today"></div></div>`;
+}
+window.showSiteEvents=st=>{
+  const ev=data.filter(x=>x.site===st).sort((a,b)=>a.date<b.date?-1:1);
+  const ov=document.createElement('div');ov.className='ov';ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="modal"><h3>${esc(labelFor(st))} 일정 ${ev.length}건</h3><div style="display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow:auto">`+
+   ev.map(e=>{const bg=e.result==='적합'?'#e2f4e8':e.result==='보완요청'?'#fff1dc':e.result==='반려'?'#fdeaea':'#E4F0F6';
+    return `<div class="cal-ev" style="background:${bg};white-space:normal;font-size:18px;padding:6px 8px" onclick="this.closest('.ov').remove();showEdit(${e.id})">${e.date.slice(5).replace('-','/')} ${esc(shortType(e.type))}${e.result?' · '+esc(e.result):''}</div>`}).join('')+
+   `</div><div style="text-align:right;margin-top:10px"><button class="btn btn-s" onclick="this.closest('.ov').remove()">닫기</button></div></div>`;
+  document.body.appendChild(ov);
+};
+function rYear(fl){return calYr==='gantt'?rGantt(fl):rYearCal(fl);}
 window.fixYearH=function(){
   const w=document.getElementById('yr-wrap');if(!w)return;
   const top=w.getBoundingClientRect().top;
   w.style.height=Math.max(420,window.innerHeight-top-14)+'px';
+  const rows=w.querySelectorAll('.gt-row');if(rows.length){const hh=w.querySelector('.gt-head').offsetHeight,rh=Math.max(20,Math.min(34,Math.floor((w.clientHeight-hh-4)/rows.length)));rows.forEach(r=>r.style.height=rh+'px');w.querySelectorAll('.gt-body').forEach(b=>b.style.overflowY=(rh*rows.length>w.clientHeight-hh)?'auto':'visible');
+   const t=document.getElementById('gt-today');const d=new Date();if(t&&d.getFullYear()===cy){const a=w.querySelector('.gt-head .gt-area').getBoundingClientRect(),wr=w.getBoundingClientRect();t.style.left=(a.left-wr.left+a.width*((d-new Date(cy,0,1))/(new Date(cy+1,0,1)-new Date(cy,0,1))))+'px';t.style.display='block';}}
 };
 function rCal(fl){
   if(calMode==='year')return rYear(fl);
