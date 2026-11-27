@@ -326,6 +326,16 @@ body.f10,body.f10 :is(input,select,textarea,button,table,th,td,code){font-family
 .tb-stats{display:flex;align-items:center;gap:8px;flex:none}
 .tbs{flex:none;white-space:nowrap;font-size:15px;color:#5c6b86;background:#fff;border:1.5px solid #dfe6f3;border-radius:14px;padding:3px 12px}
 .tbs b{color:#e8820c;font-weight:700;margin-left:3px;font-size:17px}.tbs b.ok{color:#1f8a52}
+
+.header{display:flex !important;align-items:center;justify-content:flex-start;text-align:left !important;padding:12px 18px !important;min-height:56px !important}
+.hd-l{display:flex;align-items:center;gap:10px;min-width:0}
+.site-title{min-width:0 !important;padding:2px 8px !important}
+.site-title-img{display:block;max-height:46px;max-width:60vw;object-fit:contain}
+.hd-tools{display:flex;align-items:center;gap:4px;opacity:.3;transition:opacity .15s}.hd-l:hover .hd-tools{opacity:1}
+.hd-t{position:relative;background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;font-size:15px;line-height:1;padding:4px 6px;cursor:pointer;display:inline-flex}
+.hd-t input[type=color]{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}
+.gear{left:auto !important;right:10px}
+.font-sel{position:absolute;right:40px;top:50%;transform:translateY(-50%);z-index:5}
 </style>
 </head>
 <body>
@@ -520,10 +530,14 @@ const SAVE_KEY='bst_data_v2';
 let lastSyncedAt=0; // 이 기기에서 마지막으로 반영된 데이터의 시각(로컬 저장 or 원격 수신)
 
 let siteTitle='건물지원사업_이미지';try{siteTitle=localStorage.getItem('bst_title')||siteTitle}catch(e){}
+let siteTitleColor='#ffd23f',siteTitleImg='';try{siteTitleColor=localStorage.getItem('bst_title_color')||siteTitleColor;siteTitleImg=localStorage.getItem('bst_title_img')||''}catch(e){}
+window.setTitleColor=(c,commit)=>{siteTitleColor=c;const e=document.querySelector('.site-title');if(e)e.style.color=c;if(commit){try{localStorage.setItem('bst_title_color',c)}catch(x){}saveAll();}};
+window.pickTitleImg=()=>{const i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=()=>{const f=i.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const sc=Math.min(1,120/im.height,600/im.width),c=document.createElement('canvas');c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext('2d').drawImage(im,0,0,c.width,c.height);let u=c.toDataURL('image/png');if(u.length>300000)u=c.toDataURL('image/jpeg',.85);siteTitleImg=u;try{localStorage.setItem('bst_title_img',u)}catch(x){}saveAll();render();};im.src=rd.result;};rd.readAsDataURL(f);};i.click();};
+window.clearTitleImg=()=>{siteTitleImg='';try{localStorage.removeItem('bst_title_img')}catch(x){}saveAll();render();};
 window.setSiteTitle=t=>{t=String(t||'').replace(/\s+/g,' ').trim()||'건물지원사업_이미지';siteTitle=t;try{localStorage.setItem('bst_title',t)}catch(e){}saveAll();document.title=t;};
 function saveAll(){
   lastSyncedAt=Date.now();
-  const payload={data,nid,siteInfo,siteMemo,siteAdvE,siteGrE,selYear,chgData,chgNid,hist,histNid,siteTitle};
+  const payload={data,nid,siteInfo,siteMemo,siteAdvE,siteGrE,selYear,chgData,chgNid,hist,histNid,siteTitle,siteTitleColor,siteTitleImg};
   try{localStorage.setItem(SAVE_KEY,JSON.stringify({...payload,_updatedAt:lastSyncedAt}));}catch(e){}
   if(window.fbSaveData)window.fbSaveData(payload);
 }
@@ -544,6 +558,8 @@ function loadAll(){
 }
 function applyRemote(o){
   if(o&&o.siteTitle){siteTitle=o.siteTitle;try{localStorage.setItem('bst_title',siteTitle)}catch(e){}}
+  if(o&&o.siteTitleColor){siteTitleColor=o.siteTitleColor;try{localStorage.setItem('bst_title_color',siteTitleColor)}catch(e){}}
+  if(o&&typeof o.siteTitleImg==='string'){siteTitleImg=o.siteTitleImg;try{siteTitleImg?localStorage.setItem('bst_title_img',siteTitleImg):localStorage.removeItem('bst_title_img')}catch(e){}}
   if(!o||!o.data||!o.data.length)return;
   data=o.data;nid=o.nid||200;siteInfo=o.siteInfo||{};siteMemo=o.siteMemo||{};siteAdvE=o.siteAdvE||{};siteGrE=o.siteGrE||{};selYear=o.selYear||TY;
   chgData=o.chgData||[];chgNid=o.chgNid||1;hist=normHist(o.hist);histNid=o.histNid||1;
@@ -1216,7 +1232,7 @@ function render(){
   const years=getYears();
   const showYr=!(cv==='calendar'||cv==='guide');
   const yrBar=showYr?`<div class="tb-left">${years.map(y=>`<button class="yp${y===selYear?' on':''}" onclick="chgYear(${y})">${y}년</button>`).join('')}<span class="yp-sep"></span>${[0,1,2].map(r=>`<button class="rp${r===selRound?' on':''}" onclick="chgRound(${r})">${r===0?'전체':r+'차'}</button>`).join('')}</div>`:'';
-  let h=`<div class="header"><button class="gear" onclick="toggleFontSel()" title="글꼴 설정">⚙</button><div class="site-title" contenteditable="true" spellcheck="false" title="눌러서 제목 수정 (Enter로 저장)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onblur="setSiteTitle(this.textContent);this.textContent=siteTitle">${esc(siteTitle)}</div>
+  let h=`<div class="header"><div class="hd-l">${siteTitleImg?`<img class="site-title-img" src="${siteTitleImg}" alt="${esc(siteTitle)}" title="${esc(siteTitle)}">`:`<div class="site-title" style="color:${siteTitleColor}" contenteditable="true" spellcheck="false" title="눌러서 제목 수정 (Enter로 저장)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onblur="setSiteTitle(this.textContent);this.textContent=siteTitle">${esc(siteTitle)}</div>`}<span class="hd-tools"><label class="hd-t" title="제목 글자색 바꾸기">🎨<input type="color" value="${siteTitleColor}" oninput="setTitleColor(this.value,false)" onchange="setTitleColor(this.value,true)"></label><button class="hd-t" onclick="pickTitleImg()" title="이미지로 제목 넣기">🖼</button>${siteTitleImg?'<button class="hd-t" onclick="clearTitleImg()" title="이미지 빼고 글자 제목으로">✕</button>':''}</span></div><button class="gear" onclick="toggleFontSel()" title="글꼴 설정">⚙</button>
   <select id="fontSel" class="font-sel" style="display:${window._fsOpen?'block':'none'}" onchange="setFont(this.value)" title="글꼴 바꾸기">${FONTS.map((f,i)=>`<option value="${i+1}"${String(fontNo)===String(i+1)?' selected':''}>${f[0]}${f.ok===false?' (글꼴 파일 없음)':''}</option>`).join('')}</select>
   ${selStage?`<div style="text-align:center;margin-top:12px;font-size:18px;color:#F3C39F">'${selStage}' 단계만 보는 중 · <span style="cursor:pointer;text-decoration:underline" onclick="clearStage()">필터 해제</span></div>`:''}
   </div>
