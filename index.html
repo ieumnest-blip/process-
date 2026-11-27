@@ -311,6 +311,13 @@ body.f10,body.f10 :is(input,select,textarea,button,table,th,td,code){font-family
 
 .hxt-r{cursor:pointer}.hxt-r:hover td{background:#eef4ff}.hxt-op{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .hxt-ex .hx-card{margin:0;border-radius:10px}
+
+.gt-bar{top:12%!important;height:76%!important;overflow:visible}
+.gt-bt{position:absolute;left:6px;top:0;bottom:0;display:flex;align-items:center;font-size:12px;font-weight:800;color:#fff;white-space:nowrap;pointer-events:none;z-index:3;text-shadow:0 0 2px rgba(0,0,0,.35)}
+.gt-bar.out-r .gt-bt{left:100%;margin-left:4px;color:var(--c);text-shadow:none}
+.gt-bar.out-l .gt-bt{left:auto;right:100%;margin-right:4px;color:var(--c);text-shadow:none}
+.gt-bar.out-x .gt-bt{display:none}
+.gt-mk{width:8px!important;height:8px!important;top:auto!important;bottom:-4px!important;margin:0 0 0 -4px!important;border-width:1.5px!important}
 </style>
 </head>
 <body>
@@ -1236,7 +1243,7 @@ function render(){
   <div class="chips" id="chipArea">${(cv==='chg'||cv==='app'||cv==='inst')?'':[...sf].map(s=>'<span class="chip" onclick="removeSite(\''+s.replace(/'/g,"\\'")+'\')">'+esc(labelFor(s))+'<span class="cx">✕</span></span>').join('')}</div>
   <div class="content" id="ct">${ctHtml}</div>`;
   document.getElementById('app').innerHTML=h;
-  applyFont();checkFonts();
+  applyFont();checkFonts();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(window.layoutGantt&&cv==='calendar')layoutGantt()});
   if(cv==='guide'){document.querySelectorAll('.toolbar,.chips').forEach(x=>x.style.display='none');fixGuideH();}
   if(cv==='calendar'){fixCalH();fixYearH();scrollCalToCenter();}
 }
@@ -1510,12 +1517,12 @@ function rGantt(fl){
   h+=`</div></div><div class="gt-body">`;
   rows.forEach(r=>{
     const mk=r.ev.filter(e=>e.result==='보완요청'||e.result==='반려').map(e=>`<b class="gt-mk" style="left:${pct(e.date)}%;background:${e.result==='반려'?'#d6453a':'#f39c12'}" title="${esc(e.date+' '+shortType(e.type)+' '+e.result)}" onclick="event.stopPropagation();showEdit(${e.id})"></b>`).join('');
-    const bars=r.segs.map(g=>{const l=pct(g.start),w=Math.max(.5,pct(g.eff)-l),c=PH[g.ph].c;
-      return `<div class="gt-bar${g.done?'':' ing'}" style="left:${l}%;width:${w}%;background:${c}" title="${PH[g.ph].l} ${g.start} → ${g.end||'진행중'}" ${r.site?`onclick="showSiteEvents('${r.site.replace(/'/g,"\\'")}')"`:''}>${g.ph==='app'?mk:''}</div>`;}).join('');
-    const lab=r.segs.map(g=>`<u style="color:${PH[g.ph].c}">${PH[g.ph].s}</u> ${md(g.start)}→${g.done?md(g.end):'진행'}`).join(' · ');
-    const lastEnd=pct(r.s1),firstL=pct(r.s0),right=lastEnd>58;
-    h+=`<div class="gt-row"><div class="gt-name" title="${esc(r.name)}">${esc(r.name)}</div><div class="gt-area">${bars}
-      <span class="gt-lb" style="${right?'right:'+(100-firstL)+'%;padding-right:6px':'left:'+lastEnd+'%;padding-left:6px'}">${lab}</span></div></div>`;
+    const mg={};r.segs.forEach(g=>{const k=g.ph+'|'+g.start+'|'+(g.end||'');if(mg[k])mg[k].n++;else mg[k]={...g,n:1};});
+    const segs=Object.values(mg);
+    const bars=segs.map(g=>{const l=pct(g.start),w=Math.max(.5,pct(g.eff)-l),c=PH[g.ph].c;
+      const txt=`${PH[g.ph].s} ${md(g.start)}→${g.done?md(g.end):'진행중'}${g.n>1?' ×'+g.n:''}`;
+      return `<div class="gt-bar${g.done?'':' ing'}" style="left:${l}%;width:${w}%;background:${c};--c:${c}" title="${PH[g.ph].l} ${g.start} → ${g.end||'진행중'}${g.n>1?' ('+g.n+'건)':''}" ${r.site?`onclick="showSiteEvents('${r.site.replace(/'/g,"\\'")}')"`:''}>${g.ph==='app'?mk:''}<span class="gt-bt">${txt}</span></div>`;}).join('');
+    h+=`<div class="gt-row"><div class="gt-name" title="${esc(r.name)}">${esc(r.name)}</div><div class="gt-area">${bars}</div></div>`;
   });
   return h+`</div><div class="gt-today" id="gt-today"></div></div>`;
 }
@@ -1529,10 +1536,27 @@ window.showSiteEvents=st=>{
   document.body.appendChild(ov);
 };
 function rYear(fl){return calYr==='gantt'?rGantt(fl):rYearCal(fl);}
+window.layoutGantt=function(){
+  document.querySelectorAll('.gt-row').forEach(row=>{
+    const area=row.querySelector('.gt-area');if(!area)return;const AW=area.clientWidth;
+    const bars=[...area.querySelectorAll('.gt-bar')].map(el=>{const t=el.querySelector('.gt-bt');el.classList.remove('out-r','out-l','out-x');
+      return{el,t,l:el.offsetLeft,w:el.offsetWidth,tw:t?t.scrollWidth:0};}).filter(b=>b.t);
+    const occ=bars.map(b=>[b.l,b.l+b.w]);
+    const free=(x0,x1)=>x0>=0&&x1<=AW&&!occ.some(o=>x0<o[1]&&x1>o[0]);
+    bars.forEach(b=>{
+      if(b.w>=b.tw+10)return;
+      const R=[b.l+b.w+4,b.l+b.w+4+b.tw],Lf=[b.l-4-b.tw,b.l-4];
+      if(free(R[0],R[1])){b.el.classList.add('out-r');occ.push(R);}
+      else if(free(Lf[0],Lf[1])){b.el.classList.add('out-l');occ.push(Lf);}
+      else b.el.classList.add('out-x');
+    });
+  });
+};
 window.fixYearH=function(){
   const w=document.getElementById('yr-wrap');if(!w)return;
   const top=w.getBoundingClientRect().top;
   w.style.height=Math.max(420,window.innerHeight-top-14)+'px';
+  setTimeout(()=>{if(window.layoutGantt)layoutGantt();},0);
   const rows=w.querySelectorAll('.gt-row');if(rows.length){const hh=w.querySelector('.gt-head').offsetHeight,rh=Math.max(20,Math.min(34,Math.floor((w.clientHeight-hh-4)/rows.length)));rows.forEach(r=>r.style.height=rh+'px');w.querySelectorAll('.gt-body').forEach(b=>b.style.overflowY=(rh*rows.length>w.clientHeight-hh)?'auto':'visible');
    const t=document.getElementById('gt-today');const d=new Date();if(t&&d.getFullYear()===cy){const a=w.querySelector('.gt-head .gt-area').getBoundingClientRect(),wr=w.getBoundingClientRect();t.style.left=(a.left-wr.left+a.width*((d-new Date(cy,0,1))/(new Date(cy+1,0,1)-new Date(cy,0,1))))+'px';t.style.display='block';}}
 };
