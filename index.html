@@ -206,6 +206,7 @@ select.hx-yin{width:auto}
 #pwGate h2{margin:0 0 6px;font-size:22px;color:#1c2a4a}#pwGate p{margin:0 0 18px;color:#7a716a;font-size:15px}
 #pwGate input{width:100%;box-sizing:border-box;font-size:22px;letter-spacing:6px;text-align:center;padding:10px;border:2px solid #ddd;border-radius:10px;outline:none}
 #pwGate input:focus{border-color:#d6453a}#pwGate button{margin-top:14px;width:100%;font-size:17px;padding:10px;border:0;border-radius:10px;background:#d6453a;color:#fff;cursor:pointer}
+#pwGate.chk .box{visibility:hidden}
 #pwGate .err{color:#d6453a;font-size:14px;height:18px;margin-top:8px}
 
 
@@ -352,20 +353,27 @@ body.f10,body.f10 :is(input,select,textarea,button,table,th,td,code){font-family
 </style>
 </head>
 <body>
-<div id="pwGate"><div class="box"><h2>건물지원사업 진행현황</h2><p>암호를 입력하세요</p><input id="pwIn" type="password" inputmode="numeric" autocomplete="off" autofocus onkeydown="if(event.key==='Enter')pwCheck()"><div class="err" id="pwErr"></div><button type="button" onclick="pwCheck()">확인</button></div></div>
+<div id="pwGate" class="chk"><div class="box"><h2>건물지원사업 진행현황</h2><p id="pwMsg">암호를 입력하세요</p><input id="pwIn" type="password" autocomplete="current-password" autofocus onkeydown="if(event.key==='Enter')pwCheck()"><div class="err" id="pwErr"></div><button type="button" id="pwBtn" onclick="pwCheck()">확인</button></div></div>
 <script>
-(function(){var K='bst_pw_ok';var ok=false;try{ok=localStorage.getItem(K)==='1'}catch(e){}
-var g=document.getElementById('pwGate');if(ok){g.remove();return}
-window.pwCheck=function(){var v=document.getElementById('pwIn').value;
-if(v==='3111'){try{localStorage.setItem(K,'1')}catch(e){}g.remove()}
-else{document.getElementById('pwErr').textContent='암호가 맞지 않습니다';document.getElementById('pwIn').value='';document.getElementById('pwIn').focus()}
-return false};})();
+window.pwCheck=function(){
+  var i=document.getElementById('pwIn'),e=document.getElementById('pwErr'),b=document.getElementById('pwBtn'),v=i.value;
+  if(!v){e.textContent='암호를 입력하세요';return false}
+  if(!window.fbLogin){e.textContent='잠시 후 다시 눌러주세요 (연결 중)';return false}
+  b.disabled=true;e.textContent='';
+  window.fbLogin(v).then(function(){},function(err){
+    var c=(err&&err.code)||'';
+    e.textContent=(c==='auth/too-many-requests')?'시도가 너무 많습니다. 잠시 후 다시 해주세요':(c==='auth/network-request-failed')?'인터넷 연결을 확인해주세요':'암호가 맞지 않습니다';
+    i.value='';i.focus();b.disabled=false;
+  });
+  return false};
+setTimeout(function(){var g=document.getElementById('pwGate');if(g)g.classList.remove('chk')},4000);
 </script>
 <div id="app"></div>
 <div id="fbStatus" style="position:fixed;bottom:10px;right:10px;z-index:5000;font-size:15px;padding:6px 14px;border-radius:8px;font-family:sans-serif;display:none;box-shadow:0 2px 8px rgba(0,0,0,.15)"></div>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
   import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAhN6R4Fl18rLYSNTIKy2EOtrg2AjomjW4",
@@ -393,6 +401,7 @@ return false};})();
     if(ok)setTimeout(()=>{ if(el.textContent===msg) el.style.display='none'; }, 2500);
   }
 
+  function __fbDefine(){
   // 원격(다른 기기/탭) 변경 실시간 반영 — 내 쓰기가 서버에 반영되기 전(hasPendingWrites)에는 무시해서 에코를 방지
   window.fbSubscribe = (onRemoteUpdate) => {
     onSnapshot(docRef, (snap) => {
@@ -419,6 +428,24 @@ return false};})();
 
   // 모듈 스크립트는 defer로 실행되어 아래 classic 스크립트보다 늦게 준비될 수 있으므로 준비 완료를 알림
   window.dispatchEvent(new Event('fb-ready'));
+  }
+
+  // ── 로그인: 암호 하나만 입력 (내부적으로 고정 아이디 + 입력한 암호로 Firebase 로그인). 로그인한 뒤에만 클라우드 동기화 시작 ──
+  const auth = getAuth(fbApp);
+  const FB_ID = 'owner@process-note.app';
+  window.fbLogin = (pw) => signInWithEmailAndPassword(auth, FB_ID, pw);
+  window.fbLogout = async () => { try{ await signOut(auth); }catch(e){} location.reload(); };
+  let fbStarted = false;
+  onAuthStateChanged(auth, (user) => {
+    const g = document.getElementById('pwGate');
+    if (user) {
+      if (g) g.remove();
+      if (!fbStarted) { fbStarted = true; __fbDefine(); }
+    } else if (g) {
+      g.classList.remove('chk');
+      const i = document.getElementById('pwIn'); if (i) i.focus();
+    }
+  });
 </script>
 <script>
 const D=[
@@ -1261,7 +1288,7 @@ function render(){
   const showYr=!(cv==='calendar'||cv==='guide');
   const yrBar=showYr?`<div class="tb-left">${years.map(y=>`<button class="yp${y===selYear?' on':''}" onclick="chgYear(${y})">${y}년</button>`).join('')}<span class="yp-sep"></span>${[0,1,2].map(r=>`<button class="rp${r===selRound?' on':''}" onclick="chgRound(${r})">${r===0?'전체':r+'차'}</button>`).join('')}</div>`:'';
   let h=`<div class="header"><div class="hd-l">${siteTitleImg?`<img class="site-title-img" ondblclick="openDataMenu()" src="${siteTitleImg}" alt="${esc(siteTitle)}" title="${esc(siteTitle)}">`:`<div class="site-title" ondblclick="openDataMenu()" style="color:${siteTitleColor}" contenteditable="true" spellcheck="false" title="눌러서 제목 수정 (Enter로 저장) · 더블클릭: 데이터 입력" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onblur="setSiteTitle(this.textContent);this.textContent=siteTitle">${esc(siteTitle)}</div>`}<span class="hd-tools"><label class="hd-t" title="제목 글자색 바꾸기">🎨<input type="color" value="${siteTitleColor}" oninput="setTitleColor(this.value,false)" onchange="setTitleColor(this.value,true)"></label><button class="hd-t" onclick="pickTitleImg()" title="이미지로 제목 넣기">🖼</button>${siteTitleImg?'<button class="hd-t" onclick="clearTitleImg()" title="이미지 빼고 글자 제목으로">✕</button>':''}</span></div><button class="gear" onclick="toggleFontSel()" title="글꼴 설정">⚙</button>
-  <div id="gearMenu" class="gear-menu" style="display:${window._fsOpen?'block':'none'}"><div class="gm-t">글꼴</div><select id="fontSel" class="font-sel" onchange="setFont(this.value)" title="글꼴 바꾸기">${FONTS.map((f,i)=>`<option value="${i+1}"${String(fontNo)===String(i+1)?' selected':''}>${f[0]}${f.ok===false?' (글꼴 파일 없음)':''}</option>`).join('')}</select><div class="gm-t">데이터 보관</div><div class="gm-r"><button class="btn btn-icon btn-bk" onclick="exportData()" title="데이터 백업 파일로 저장">💾 백업</button><button class="btn btn-icon btn-rs" onclick="importBackup()" title="백업 파일로 복원">📂 복원</button></div></div>
+  <div id="gearMenu" class="gear-menu" style="display:${window._fsOpen?'block':'none'}"><div class="gm-t">글꼴</div><select id="fontSel" class="font-sel" onchange="setFont(this.value)" title="글꼴 바꾸기">${FONTS.map((f,i)=>`<option value="${i+1}"${String(fontNo)===String(i+1)?' selected':''}>${f[0]}${f.ok===false?' (글꼴 파일 없음)':''}</option>`).join('')}</select><div class="gm-t">계정</div><div class="gm-r" style="margin-bottom:8px"><button class="btn btn-icon" onclick="fbLogout()" title="이 기기에서 로그아웃">🔒 로그아웃</button></div><div class="gm-t">데이터 보관</div><div class="gm-r"><button class="btn btn-icon btn-bk" onclick="exportData()" title="데이터 백업 파일로 저장">💾 백업</button><button class="btn btn-icon btn-rs" onclick="importBackup()" title="백업 파일로 복원">📂 복원</button></div></div>
   ${selStage?`<div style="text-align:center;margin-top:12px;font-size:18px;color:#F3C39F">'${selStage}' 단계만 보는 중 · <span style="cursor:pointer;text-decoration:underline" onclick="clearStage()">필터 해제</span></div>`:''}
   </div>
   <div class="tabs">
