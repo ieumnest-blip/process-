@@ -542,6 +542,19 @@ let siteTitleColor='#ffd23f',siteTitleImg='';try{siteTitleColor=localStorage.get
 window.setTitleColor=(c,commit)=>{siteTitleColor=c;const e=document.querySelector('.site-title');if(e)e.style.color=c;if(commit){try{localStorage.setItem('bst_title_color',c)}catch(x){}saveAll();}};
 window.pickTitleImg=()=>{const i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=()=>{const f=i.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const sc=Math.min(1,120/im.height,600/im.width),c=document.createElement('canvas');c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext('2d').drawImage(im,0,0,c.width,c.height);let u=c.toDataURL('image/png');if(u.length>300000)u=c.toDataURL('image/jpeg',.85);siteTitleImg=u;try{localStorage.setItem('bst_title_img',u)}catch(x){}saveAll();render();};im.src=rd.result;};rd.readAsDataURL(f);};i.click();};
 window.clearTitleImg=()=>{siteTitleImg='';try{localStorage.removeItem('bst_title_img')}catch(x){}saveAll();render();};
+window.openDataMenu=()=>{
+  if(cv==='guide')return;
+  if(document.querySelector('.ov.dm'))return;
+  const acts=cv==='chg'?[['📋 처리이력 붙여넣기',"showHistImp('chg')"],['📋 변경이력 붙여넣기','showChgImp()'],['+ 변경 추가','showChgAdd()']]
+    :(cv==='app'||cv==='inst')?[['📋 처리이력 붙여넣기',`showHistImp('${cv}')`]]
+    :[['📋 데이터 입력','showImp()'],['+ 추가','showAdd()']];
+  if(acts.length===1){eval(acts[0][1]);return;}
+  const ov=document.createElement('div');ov.className='ov dm';ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="modal" style="width:min(360px,92vw)"><h3>데이터 입력</h3><div style="display:flex;flex-direction:column;gap:10px">`+
+    acts.map(a=>`<button class="btn btn-i" style="font-size:20px;padding:12px" onclick="this.closest('.ov').remove();${a[1]}">${a[0]}</button>`).join('')+
+    `</div><div style="text-align:right;margin-top:12px"><button class="btn btn-c" onclick="this.closest('.ov').remove()">닫기</button></div></div>`;
+  document.body.appendChild(ov);
+};
 window.setSiteTitle=t=>{t=String(t||'').replace(/\s+/g,' ').trim()||'건물지원사업_이미지';siteTitle=t;try{localStorage.setItem('bst_title',t)}catch(e){}saveAll();document.title=t;};
 function saveAll(){
   lastSyncedAt=Date.now();
@@ -1242,7 +1255,7 @@ function render(){
   const years=getYears();
   const showYr=!(cv==='calendar'||cv==='guide');
   const yrBar=showYr?`<div class="tb-left">${years.map(y=>`<button class="yp${y===selYear?' on':''}" onclick="chgYear(${y})">${y}년</button>`).join('')}<span class="yp-sep"></span>${[0,1,2].map(r=>`<button class="rp${r===selRound?' on':''}" onclick="chgRound(${r})">${r===0?'전체':r+'차'}</button>`).join('')}</div>`:'';
-  let h=`<div class="header"><div class="hd-l">${siteTitleImg?`<img class="site-title-img" src="${siteTitleImg}" alt="${esc(siteTitle)}" title="${esc(siteTitle)}">`:`<div class="site-title" style="color:${siteTitleColor}" contenteditable="true" spellcheck="false" title="눌러서 제목 수정 (Enter로 저장)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onblur="setSiteTitle(this.textContent);this.textContent=siteTitle">${esc(siteTitle)}</div>`}<span class="hd-tools"><label class="hd-t" title="제목 글자색 바꾸기">🎨<input type="color" value="${siteTitleColor}" oninput="setTitleColor(this.value,false)" onchange="setTitleColor(this.value,true)"></label><button class="hd-t" onclick="pickTitleImg()" title="이미지로 제목 넣기">🖼</button>${siteTitleImg?'<button class="hd-t" onclick="clearTitleImg()" title="이미지 빼고 글자 제목으로">✕</button>':''}</span></div><button class="gear" onclick="toggleFontSel()" title="글꼴 설정">⚙</button>
+  let h=`<div class="header"><div class="hd-l">${siteTitleImg?`<img class="site-title-img" ondblclick="openDataMenu()" src="${siteTitleImg}" alt="${esc(siteTitle)}" title="${esc(siteTitle)}">`:`<div class="site-title" ondblclick="openDataMenu()" style="color:${siteTitleColor}" contenteditable="true" spellcheck="false" title="눌러서 제목 수정 (Enter로 저장) · 더블클릭: 데이터 입력" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onblur="setSiteTitle(this.textContent);this.textContent=siteTitle">${esc(siteTitle)}</div>`}<span class="hd-tools"><label class="hd-t" title="제목 글자색 바꾸기">🎨<input type="color" value="${siteTitleColor}" oninput="setTitleColor(this.value,false)" onchange="setTitleColor(this.value,true)"></label><button class="hd-t" onclick="pickTitleImg()" title="이미지로 제목 넣기">🖼</button>${siteTitleImg?'<button class="hd-t" onclick="clearTitleImg()" title="이미지 빼고 글자 제목으로">✕</button>':''}</span></div><button class="gear" onclick="toggleFontSel()" title="글꼴 설정">⚙</button>
   <select id="fontSel" class="font-sel" style="display:${window._fsOpen?'block':'none'}" onchange="setFont(this.value)" title="글꼴 바꾸기">${FONTS.map((f,i)=>`<option value="${i+1}"${String(fontNo)===String(i+1)?' selected':''}>${f[0]}${f.ok===false?' (글꼴 파일 없음)':''}</option>`).join('')}</select>
   ${selStage?`<div style="text-align:center;margin-top:12px;font-size:18px;color:#F3C39F">'${selStage}' 단계만 보는 중 · <span style="cursor:pointer;text-decoration:underline" onclick="clearStage()">필터 해제</span></div>`:''}
   </div>
@@ -1252,11 +1265,6 @@ function render(){
   <div class="toolbar">
     ${yrBar}<div class="tb-mid">${regBar}</div>
     <div class="tb-right">
-    <div class="tb-grp">
-      ${cv==='chg'?`<button class="btn btn-i" onclick="showHistImp('chg')">📋 처리이력 붙여넣기</button><button class="btn btn-i" onclick="showChgImp()">📋 변경이력 붙여넣기</button><button class="btn btn-p" onclick="showChgAdd()">+ 추가</button>`
-      :(cv==='app'||cv==='inst')?`<button class="btn btn-i" onclick="showHistImp('${cv}')">📋 처리이력 붙여넣기</button>`
-      :`<button class="btn btn-i" onclick="showImp()">📋 데이터 입력</button><button class="btn btn-p" onclick="showAdd()">+ 추가</button>`}
-    </div>
     ${(cv==='chg'||cv==='app'||cv==='inst')?'':`<div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input class="search-inp" id="searchInp" placeholder="${sf.size?sf.size+'개 선택됨 — 추가 검색...':'현장 검색 (복수 선택 가능)'}" value="" oninput="onSearch(this.value)" onfocus="openSearch()" autocomplete="off">
