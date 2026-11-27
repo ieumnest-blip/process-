@@ -255,7 +255,7 @@ body.f5,body.f5 :is(input,select,textarea,button,table,th,td,code){font-family:'
 @media(max-width:900px){.yr-wrap{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;height:auto !important}.yr-m{min-height:190px}}
 @media(max-width:560px){.yr-wrap{grid-template-columns:1fr}}
 
-.gt-note{font-size:13px;color:#5c6b86;text-align:center;padding:0 10px 4px}
+.gt-ph{display:inline-flex;align-items:center;margin-right:8px;font-weight:700}.gt-ph i{width:12px;height:12px;border-radius:3px;margin-right:4px;display:inline-block}.gt-lb u{text-decoration:none;font-weight:800}.gt-note{font-size:13px;color:#5c6b86;text-align:center;padding:0 10px 4px}
 .gt-wrap{position:relative;margin:0 10px;border:2px solid #2f6fd0;border-radius:12px;background:#fff;display:flex;flex-direction:column;overflow:hidden}
 .gt-head,.gt-row{display:flex;align-items:stretch}
 .gt-head{height:26px;border-bottom:2px solid #2f6fd0;background:#eef3fb}
@@ -265,9 +265,9 @@ body.f5,body.f5 :is(input,select,textarea,button,table,th,td,code){font-family:'
 .gt-mh{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#22336b}
 .gt-body{flex:1;min-height:0}
 .gt-row{border-bottom:1px dashed #e3e9f4}
-.gt-bar{position:absolute;top:18%;height:64%;border-radius:6px;cursor:pointer;min-width:6px;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.gt-bar{position:absolute;top:22%;height:56%;border-radius:6px;cursor:pointer;min-width:6px;box-shadow:0 1px 2px rgba(0,0,0,.25)}
 .gt-bar.ing{opacity:.75;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.45) 0 5px,transparent 5px 10px)!important;border:2px dashed rgba(0,0,0,.35)}
-.gt-lb{position:absolute;top:0;bottom:0;display:flex;align-items:center;font-size:14px;font-weight:700;color:#1c2a4a;white-space:nowrap;pointer-events:none}
+.gt-lb{position:absolute;top:0;bottom:0;display:flex;align-items:center;gap:0;font-size:13px;font-weight:700;color:#1c2a4a;white-space:nowrap;pointer-events:none}
 .gt-mk{position:absolute;top:50%;width:11px;height:11px;margin:-5px 0 0 -5px;border-radius:50%;border:2px solid #fff;cursor:pointer;z-index:2}
 .gt-today{display:none;position:absolute;top:26px;bottom:0;width:0;border-left:2px solid #e8820c;pointer-events:none;z-index:3}
 @media(max-width:700px){.gt-name{flex-basis:86px;font-size:13px}}
@@ -1410,34 +1410,50 @@ function rYearCal(fl){
   return h+'</div>';
 }
 
+const PH={app:{l:'사업신청',s:'신청',c:'#2e86de'},chg:{l:'사업변경',s:'변경',c:'#8e44ad'},inst:{l:'설치확인',s:'설치',c:'#1f9d55'}};
 function rGantt(fl){
-  const sites=[...new Set(fl.map(x=>x.site))];
   const td=new Date(),ts=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
   const y0=new Date(cy,0,1).getTime(),y1=new Date(cy+1,0,1).getTime(),T=y1-y0;
   const tm=d=>new Date(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10)).getTime();
   const pct=d=>Math.max(0,Math.min(100,(tm(d)-y0)/T*100));
   const md=d=>+d.slice(5,7)+'/'+ +d.slice(8,10);
-  const rows=sites.map((st,i)=>{
+  const nm=t=>String(t||'').replace(/㈜|\(주\)|주식회사|\s/g,'');
+  const rowsMap={};
+  const getRow=(name,key,exact)=>{const n=nm(name);let k=rowsMap[n]?n:null;if(!k&&!exact){const c=Object.keys(rowsMap).filter(x=>x.includes(n)||n.includes(x));if(c.length===1)k=c[0];}if(!k){k=n;rowsMap[k]={name:key||name,site:null,segs:[],ev:[]};}return rowsMap[k];};
+  const addSeg=(row,ph,start,end,extra)=>{if(!start)return;if(end&&end<start)start=end;const eff=end||(ts>=start?ts:start);row.segs.push({ph,start,end,eff,done:!!end,...extra});};
+  // 사업신청 (data)
+  const sitesD=[...new Set(fl.map(x=>x.site))];
+  sitesD.forEach(st=>{
     const ev=fl.filter(x=>x.site===st).sort((a,b)=>a.date<b.date?-1:1);
     const sub=ev.find(x=>x.type==='신청서 제출')||ev[0];
     const ok=ev.find(x=>x.type==='신청서 검토'&&x.result==='적합');
-    let start=sub.date;const end=ok?ok.date:null;if(end&&end<start)start=ev[0].date;const eff=end||(ts>=start?ts:start);
-    return{site:st,ev,start,end,eff,done:!!ok,days:Math.round((tm(eff)-tm(start))/864e5)};
-  }).filter(r=>r.eff>=cy+'-01-01'&&r.start<=cy+'-12-31').sort((a,b)=>a.start<b.start?-1:a.start>b.start?1:(a.eff<b.eff?-1:1));
+    const row=getRow(baseName(st),labelFor(st),true);row.site=st;row.ev=ev;
+    addSeg(row,'app',sub.date,ok?ok.date:null);
+  });
+  const sfOk=name=>!sf.size||[...sf].some(s=>{const a=nm(baseName(s)),b=nm(name);return a===b||a.includes(b)||b.includes(a);});
+  // 사업변경
+  chgData.forEach(c=>{if(!c.org||!sfOk(c.org))return;const row=getRow(c.org,c.org);addSeg(row,'chg',c.appDate,c.apprDate||null,{no:c.chgNo});});
+  // 설치확인
+  (hist.inst||[]).forEach(r=>{if(!r.site||!sfOk(r.site)||!r.items.length)return;
+    const its=r.items.slice().sort((a,b)=>a.dt.localeCompare(b.dt));
+    const ok=its.find(i=>i.result==='적합');
+    const row=getRow(r.site,r.site);addSeg(row,'inst',its[0].dt.slice(0,10),ok?ok.dt.slice(0,10):null);});
+  const rows=Object.values(rowsMap).map(r=>{r.segs.sort((a,b)=>a.start<b.start?-1:1);r.s0=r.segs[0]&&r.segs[0].start;r.s1=r.segs.length?r.segs.map(x=>x.eff).sort().pop():'';return r;})
+    .filter(r=>r.segs.some(x=>x.eff>=cy+'-01-01'&&x.start<=cy+'-12-31')).sort((a,b)=>a.s0<b.s0?-1:a.s0>b.s0?1:0);
   let h=`<div class="cal-nav"><button class="btn btn-s" onclick="cyp()">◀</button><span class="cal-title">${cy}년</span><button class="btn btn-s" onclick="cyn()">▶</button>
    <button class="btn btn-s" style="margin-left:14px" onclick="setCalMode('month')">월 보기</button><button class="btn btn-s" onclick="setCalMode('year')">🗓 달력형</button></div>
-   <div class="gt-note">막대 = 신청서 제출일 → 신청서 검토 적합일 (막대 오른쪽에 날짜·소요일) · 점선 막대 = 아직 적합 전(오늘까지) · 🟠=보완요청 🔴=반려 표시 · 막대 클릭=그 현장 일정</div>
+   <div class="gt-note">`+Object.values(PH).map(p=>`<span class="gt-ph"><i style="background:${p.c}"></i>${p.l}</span>`).join('')+` 사업신청: 신청서 제출→검토 적합 · 사업변경: 변경신청→승인 · 설치확인: 제출→적합 · 점선=아직 완료 전(오늘까지) · 🟠보완요청 🔴반려 · 막대 클릭=일정</div>
    <div class="gt-wrap" id="yr-wrap"><div class="gt-head"><div class="gt-name"></div><div class="gt-area">`;
   for(let m=0;m<12;m++)h+=`<div class="gt-mh" style="left:${pct(cy+'-'+String(m+1).padStart(2,'0')+'-01')}%;width:${100/12}%">${m+1}월</div>`;
   h+=`</div></div><div class="gt-body">`;
-  rows.forEach((r,i)=>{
-    const col=SPAN_PAL[i%SPAN_PAL.length],l=pct(r.start),w=Math.max(.5,pct(r.eff)-l);
+  rows.forEach(r=>{
     const mk=r.ev.filter(e=>e.result==='보완요청'||e.result==='반려').map(e=>`<b class="gt-mk" style="left:${pct(e.date)}%;background:${e.result==='반려'?'#d6453a':'#f39c12'}" title="${esc(e.date+' '+shortType(e.type)+' '+e.result)}" onclick="event.stopPropagation();showEdit(${e.id})"></b>`).join('');
-    const label=`${md(r.start)} → ${r.done?md(r.end):'진행중'} (${r.days}일)`;
-    const right=l+w>62;
-    h+=`<div class="gt-row"><div class="gt-name" title="${esc(r.site)}">${esc(labelFor(r.site))}</div><div class="gt-area">
-      <div class="gt-bar${r.done?'':' ing'}" style="left:${l}%;width:${w}%;background:${col}" onclick="showSiteEvents('${r.site.replace(/'/g,"\\'")}')">${mk}</div>
-      <span class="gt-lb" style="${right?'right:'+(100-l)+'%;padding-right:6px':'left:'+(l+w)+'%;padding-left:6px'}">${label}</span></div></div>`;
+    const bars=r.segs.map(g=>{const l=pct(g.start),w=Math.max(.5,pct(g.eff)-l),c=PH[g.ph].c;
+      return `<div class="gt-bar${g.done?'':' ing'}" style="left:${l}%;width:${w}%;background:${c}" title="${PH[g.ph].l} ${g.start} → ${g.end||'진행중'}" ${r.site?`onclick="showSiteEvents('${r.site.replace(/'/g,"\\'")}')"`:''}>${g.ph==='app'?mk:''}</div>`;}).join('');
+    const lab=r.segs.map(g=>`<u style="color:${PH[g.ph].c}">${PH[g.ph].s}</u> ${md(g.start)}→${g.done?md(g.end):'진행'}`).join(' · ');
+    const lastEnd=pct(r.s1),firstL=pct(r.s0),right=lastEnd>58;
+    h+=`<div class="gt-row"><div class="gt-name" title="${esc(r.name)}">${esc(r.name)}</div><div class="gt-area">${bars}
+      <span class="gt-lb" style="${right?'right:'+(100-firstL)+'%;padding-right:6px':'left:'+lastEnd+'%;padding-left:6px'}">${lab}</span></div></div>`;
   });
   return h+`</div><div class="gt-today" id="gt-today"></div></div>`;
 }
