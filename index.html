@@ -6,6 +6,7 @@
 <title>건물지원사업 진행현황</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 @font-face{font-family:'Kyobo';src:url('KyoboHandwriting2021sjy.ttf') format('truetype')}
@@ -296,6 +297,17 @@ body{font-size:17px;line-height:1.45}
 .hx-chip,.badge{font-weight:700;border-radius:8px}
 .hx-chip{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
 .memo-cell.has,.hx-op.fix{color:var(--orange)}
+
+body.f10,body.f10 :is(input,select,textarea,button,table,th,td,code){font-family:'IBM Plex Sans KR',system-ui,'Malgun Gothic',sans-serif !important}
+.header{min-height:30px;padding:4px 14px !important}
+.gear{position:absolute;left:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;opacity:.3;font-size:18px;cursor:pointer;padding:2px 6px}.gear:hover{opacity:.9}
+.font-sel{display:none}
+.tb-left{grid-column:1;grid-row:1;display:flex;gap:6px;align-items:center;flex-wrap:nowrap;overflow-x:auto;min-width:0}
+.yp,.rp{flex:none;border:1.5px solid #22336b;background:#fff;color:#22336b;border-radius:14px;font-family:inherit;cursor:pointer;white-space:nowrap}
+.yp{padding:3px 12px;font-size:17px;font-weight:600}.rp{padding:2px 9px;font-size:14px;border-color:#c9d3e6}
+.yp.on{background:#22336b;color:#ffd23f;font-weight:700}.rp.on{background:#e8820c;color:#fff;border-color:#e8820c;font-weight:700}
+.yp-sep{flex:none;width:1px;height:18px;background:#c9d3e6;margin:0 2px}
+@media(max-width:900px){.tb-left{flex:1 0 100%}}
 </style>
 </head>
 <body>
@@ -611,7 +623,7 @@ function gf(){
   let d=[...data];
   // Filter by selected year+round (sites belonging to selYear/selRound) — 매칭 현장이 0개면 빈 목록을 보여줌 (전체를 다시 보여주지 않음)
   const yrSites=new Set(Object.entries(siteInfo).filter(([_,v])=>v.year===selYear&&(selRound===0||v.round===selRound)).map(([k])=>k));
-  d=d.filter(i=>yrSites.has(i.site));
+  if(cv!=='calendar')d=d.filter(i=>yrSites.has(i.site));
   if(sf.size>0)d=d.filter(i=>sf.has(i.site));
   if(selStage){
     const stageMatch=new Set([...yrSites].filter(s=>calcS(data.filter(x=>x.site===s)).stage===selStage));
@@ -1102,11 +1114,11 @@ function rChg(){
 }
 
 
-const FONTS=[['① 교보 손글씨','Kyobo'],['② 개구 손글씨 (Gaegu)','Gaegu'],['③ 깍두기도면체','KkakdugiDomyeon'],['④ 영덕바다체','YeongdeokSea'],['⑤ 상주다정다감체','SangjuDajeong'],['⑥ 그리운 고운','GriunGowoon'],['⑦ 온글잎 주리손편지','OwnglyphJoori'],['⑧ 카페24 고운밤','Cafe24Oneprettynight'],['⑨ 카페24 쑥쑥','Cafe24Ssukssuk']];
+const FONTS=[['① 교보 손글씨','Kyobo'],['② 개구 손글씨 (Gaegu)','Gaegu'],['③ 깍두기도면체','KkakdugiDomyeon'],['④ 영덕바다체','YeongdeokSea'],['⑤ 상주다정다감체','SangjuDajeong'],['⑥ 그리운 고운','GriunGowoon'],['⑦ 온글잎 주리손편지','OwnglyphJoori'],['⑧ 카페24 고운밤','Cafe24Oneprettynight'],['⑨ 카페24 쑥쑥','Cafe24Ssukssuk'],['⑩ IBM Plex Sans KR (가이드라인)','IBM Plex Sans KR']];
 function checkFonts(){FONTS.forEach(async f=>{try{const r=await document.fonts.load("16px '"+f[1]+"'","가나다");f.ok=r.length>0}catch(e){f.ok=false}
   const sel=document.getElementById('fontSel');if(sel)[...sel.options].forEach((o,i)=>{o.textContent=FONTS[i][0]+(FONTS[i].ok===false?' (글꼴 파일 없음)':'')})})}
 let fontNo=2;try{fontNo=parseInt(localStorage.getItem('bst_font'))||2}catch(e){}
-function applyFont(){document.body.classList.remove('f1','f2','f3','f4','f5','f6','f7','f8','f9');document.body.classList.add('f'+fontNo)}
+function applyFont(){document.body.classList.remove('f1','f2','f3','f4','f5','f6','f7','f8','f9','f10');document.body.classList.add('f'+fontNo)}
 window.setFont=v=>{fontNo=parseInt(v)||2;try{localStorage.setItem('bst_font',String(fontNo))}catch(e){}applyFont();const se=document.getElementById('fontSel');if(se)se.value=String(fontNo)};
 const TAB_DEF=[{k:'duration',l:'소요기간'},{k:'app',l:'사업신청'},{k:'chg',l:'사업변경'},{k:'inst',l:'설치확인'},{k:'calendar',l:'달력'},{k:'site',l:'현장별'},{k:'guide',l:'설치확인 가이드라인'}];
 function tabOrder(){let o=[];try{o=JSON.parse(localStorage.getItem('bst_taborder')||'[]')}catch(e){}
@@ -1121,6 +1133,7 @@ window.tabDP=e=>{e.preventDefault();const el=e.currentTarget,to=el.dataset.k,fro
   const ks=tabOrder().map(t=>t.k).filter(k=>k!==from);let i=ks.indexOf(to);if(after)i++;ks.splice(i,0,from);
   try{localStorage.setItem('bst_taborder',JSON.stringify(ks))}catch(x){}_tabDrag=null;render();};
 window.fixGuideH=function(){const f=document.getElementById('guideFrame');if(!f)return;f.style.height=Math.max(400,window.innerHeight-f.getBoundingClientRect().top-6)+'px';};
+window.toggleFontSel=()=>{window._fsOpen=!window._fsOpen;const e=document.getElementById('fontSel');if(e)e.style.display=window._fsOpen?'block':'none';};
 function render(){
   if(cv==='date')cv='duration';
   const fl=gf(),sites=gs();
@@ -1128,25 +1141,17 @@ function render(){
   const ctHtml=cv==='guide'?'<iframe id="guideFrame" src="guide.html" style="width:100%;border:0;border-radius:10px;background:#fff" title="설치확인 가이드라인"></iframe>':cv==='chg'?rChg():(cv==='app'||cv==='inst')?rHist(cv):rv(fl);
   const regBar=window._regBar||'';
   const years=getYears();
-  const yrTabs=years.map(y=>{
-    const btn='<button onclick="chgYear('+y+')" style="padding:4px 14px;border:none;border-radius:16px;font-size:20px;cursor:pointer;font-family:inherit;font-weight:'+(y===selYear?'700':'400')+';background:'+(y===selYear?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.08)')+';color:#fff;margin-right:6px">'+y+'년</button>';
-    if(y===roundPanelYear){
-      const rnd=[0,1,2].map(r=>'<button onclick="event.stopPropagation();chgRound('+r+')" style="padding:3px 12px;border:none;border-radius:14px;font-size:17px;cursor:pointer;font-family:inherit;font-weight:'+(r===selRound?'700':'400')+';background:'+(r===selRound?'#e8820c':'rgba(255,255,255,0.14)')+';color:#fff;margin-right:4px">'+(r===0?'전체':r+'차')+'</button>').join('');
-      return btn+'<span style="display:inline-flex;align-items:center;padding-left:6px;margin-right:10px;border-left:1px solid rgba(255,255,255,.3)">'+rnd+'</span>';
-    }
-    return btn;
-  }).join('');
-  let h=`<div class="header"><div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:16px">
-    <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">${yrTabs}</div>
-  </div>
-  <select id="fontSel" class="font-sel" onchange="setFont(this.value)" title="글꼴 바꾸기">${FONTS.map((f,i)=>`<option value="${i+1}"${String(fontNo)===String(i+1)?' selected':''}>${f[0]}${f.ok===false?' (글꼴 파일 없음)':''}</option>`).join('')}</select>
+  const showYr=!(cv==='calendar'||cv==='guide');
+  const yrBar=showYr?`<div class="tb-left">${years.map(y=>`<button class="yp${y===selYear?' on':''}" onclick="chgYear(${y})">${y}년</button>`).join('')}<span class="yp-sep"></span>${[0,1,2].map(r=>`<button class="rp${r===selRound?' on':''}" onclick="chgRound(${r})">${r===0?'전체':r+'차'}</button>`).join('')}</div>`:'';
+  let h=`<div class="header"><button class="gear" onclick="toggleFontSel()" title="글꼴 설정">⚙</button>
+  <select id="fontSel" class="font-sel" style="display:${window._fsOpen?'block':'none'}" onchange="setFont(this.value)" title="글꼴 바꾸기">${FONTS.map((f,i)=>`<option value="${i+1}"${String(fontNo)===String(i+1)?' selected':''}>${f[0]}${f.ok===false?' (글꼴 파일 없음)':''}</option>`).join('')}</select>
   ${selStage?`<div style="text-align:center;margin-top:12px;font-size:18px;color:#F3C39F">'${selStage}' 단계만 보는 중 · <span style="cursor:pointer;text-decoration:underline" onclick="clearStage()">필터 해제</span></div>`:''}
   </div>
   <div class="tabs">
     ${tabOrder().map(t=>`<button class="tab ${cv===t.k?'active':''}" draggable="true" data-k="${t.k}" onclick="sv('${t.k}')" ondragstart="tabDS(event)" ondragover="tabDO(event)" ondragleave="tabDL(event)" ondrop="tabDP(event)" ondragend="tabDE(event)" title="끌어서 순서 변경">${t.l}</button>`).join('')}
   </div>
   <div class="toolbar">
-    <div class="tb-mid">${regBar}</div>
+    ${yrBar}<div class="tb-mid">${regBar}</div>
     <div class="tb-right">
     <div class="tb-grp">
       ${cv==='chg'?`<button class="btn btn-i" onclick="showHistImp('chg')">📋 처리이력 붙여넣기</button><button class="btn btn-i" onclick="showChgImp()">📋 변경이력 붙여넣기</button><button class="btn btn-p" onclick="showChgAdd()">+ 추가</button>`
