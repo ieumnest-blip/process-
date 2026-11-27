@@ -320,6 +320,8 @@ body.f10,body.f10 :is(input,select,textarea,button,table,th,td,code){font-family
 .gt-mk{width:8px!important;height:8px!important;top:auto!important;bottom:-4px!important;margin:0 0 0 -4px!important;border-width:1.5px!important}
 
 .header{text-align:center}.site-title{display:inline-block;min-width:120px;font-size:24px;font-weight:700;color:#ffd23f;line-height:1.2;padding:0 10px;border-radius:8px;outline:none;cursor:text}.site-title:hover{background:rgba(255,255,255,.1)}.site-title:focus{background:rgba(255,255,255,.18)}
+
+.hx-st{display:inline-flex;flex-wrap:wrap;gap:4px 16px;margin-left:16px;font-size:17px;font-weight:500;color:#5c6b86;vertical-align:middle}.hx-st b{color:#e8820c;font-weight:700}
 </style>
 </head>
 <body>
@@ -973,8 +975,9 @@ window.saveKw=()=>{
   hist.kw=[...new Set(document.getElementById('kw-t').value.split('\n').map(s=>s.trim()).filter(Boolean))];
   document.querySelector('.ov').remove();saveAll();render();
 };
-function histTable(kind,rows,info){
-  if(!rows.length)return '<div class="hx-empty">선택한 본부에 해당하는 현장이 없습니다</div>';
+function histTable(kind,rows,info,extra){
+  extra=extra||[];const arr=[];
+  if(!rows.length&&!extra.length)return '<div class="hx-empty">선택한 본부에 해당하는 현장이 없습니다</div>';
   let h=`<div class="dt-wrap"><table class="dt hxt"><thead><tr><th>현장</th><th>연도·차수</th><th>지역본부</th><th>최초일</th><th>최종일</th><th>소요일</th><th>처리</th><th>보완</th><th>상태</th><th style="text-align:left">최근 의견</th></tr></thead><tbody>`;
   rows.forEach(r=>{
     const its=[...r.items].sort((a,b)=>b.no-a.no);if(!its.length)return;
@@ -983,7 +986,7 @@ function histTable(kind,rows,info){
     const days=dB(firstD,lastD),inf=info.get(r);
     const op=(latest.opinion||'').replace(/\s*\n\s*/g,' ').trim();
     const sel=kind==='app'&&histSel(r);
-    h+=`<tr class="hxt-r" onclick="hxtToggle(${r.id},'${kind}')" title="눌러서 전체 처리이력 보기">
+    arr.push({k:lastD,h:`<tr class="hxt-r" onclick="hxtToggle(${r.id},'${kind}')" title="눌러서 전체 처리이력 보기">
       <td style="font-weight:700;text-align:left;padding-left:10px">${esc(r.site)}</td>
       <td>${r.year&&r.round?r.year+'-'+r.round+'차':'<span style="color:#d6453a">미지정</span>'}</td>
       <td>${esc(inf?inf.region:'')}</td>
@@ -993,16 +996,31 @@ function histTable(kind,rows,info){
       <td style="${fixes.length?'color:#d9730a;font-weight:700':'color:#5c6b86'}">${fixes.length}회</td>
       <td style="white-space:nowrap">${sel?`<span class="badge b-pass">최종 적합</span>`:`<span style="color:#5c6b86;font-size:15px">${esc(latest.status)}</span> ${histBadge(latest.result)}`}</td>
       <td style="text-align:left;font-size:16px;max-width:420px;color:${HIST_FIX.test(latest.result)?'#d9730a':'#1c2a4a'}"><div class="hxt-op">${esc(op)}</div></td></tr>
-      <tr class="hxt-ex" id="hxex-${kind}-${r.id}" style="display:none"><td colspan="10" style="padding:8px;background:#f5f8ff;text-align:left">${histCardHtml(kind,r,inf)}</td></tr>`;
+      <tr class="hxt-ex" id="hxex-${kind}-${r.id}" style="display:none"><td colspan="10" style="padding:8px;background:#f5f8ff;text-align:left">${histCardHtml(kind,r,inf)}</td></tr>`});
   });
-  return h+'</tbody></table></div>';
+  extra.forEach(r=>{const d=dB(r.appDate,r.apprDate),bc=/반려|부적합/.test(r.result||'')?'b-fix':/승인|적합/.test(r.result||'')?'b-pass':'b-sub',reg=histBranchRegion(r.branch);
+    arr.push({k:r.apprDate||r.appDate,h:`<tr class="hxt-r" onclick="hxtToggle('c${r.id}','chg')" title="눌러서 상세 보기">
+      <td style="font-weight:700;text-align:left;padding-left:10px">${esc(r.org)}</td>
+      <td>${r.year?esc(r.year)+(r.round?'-'+r.round+'차':''):'-'}</td><td>${esc(reg)}</td>
+      <td style="color:#5c6b86">${esc(r.appDate)}</td><td style="color:#5c6b86">${esc(r.apprDate)||'-'}</td>
+      <td style="font-weight:700;color:${chgDurColor(d)}">${d!==null?d+'일':'<span style="color:#c9d6ee;font-weight:400">진행중</span>'}</td>
+      <td style="color:#5c6b86">-</td><td style="color:#5c6b86">-</td>
+      <td><span class="badge ${bc}">${esc(r.result)||'-'}</span></td>
+      <td style="text-align:left;font-size:16px;max-width:420px"><div class="hxt-op">${esc(r.reason||r.memo||'')}</div></td></tr>
+      <tr class="hxt-ex" id="hxex-chg-c${r.id}" style="display:none"><td colspan="10" style="padding:10px 14px;background:#f5f8ff;text-align:left;font-size:17px;line-height:1.6">
+        <b>신청번호</b> ${esc(r.mgmt)} · <b>에너지원</b> ${esc(r.etype)} · <b>지역코드</b> ${esc(r.regionCode)} · <b>담당지사</b> ${esc(r.branch)} · <b>변경신청번호</b> ${esc(r.chgNo)}<br><b>변경사유</b> ${esc(r.reason||r.memo||'')}
+        <div style="text-align:right"><button class="btn btn-s" onclick="event.stopPropagation();showChgEdit(${r.id})">수정</button> <button class="btn btn-s" style="color:#d6453a" onclick="event.stopPropagation();delChg(${r.id})">삭제</button></div></td></tr>`});
+  });
+  arr.sort((a,b)=>String(b.k).localeCompare(String(a.k)));
+  return h+arr.map(x=>x.h).join('')+'</tbody></table></div>';
 }
 window.hxtToggle=(id,kind)=>{const e=document.getElementById('hxex-'+kind+'-'+id);if(!e)return;e.style.display=e.style.display==='none'?'table-row':'none';};
 function histCards(kind){
   const list=histVisible(kind);
   const lastOf=r=>r.items.reduce((m,i)=>i.dt>m?i.dt:m,'');
   list.sort((a,b)=>lastOf(b).localeCompare(lastOf(a)));
-  if(!list.length)return hist[kind].length
+  const extra=kind==='chg'?(window._chgExtra||[]):[];
+  if(!list.length&&!extra.length)return hist[kind].length
     ?`<div class="hx-empty">${selYear}년${selRound?' '+selRound+'차':''}에 해당하는 처리이력이 없습니다 (다른 연도·차수에 ${hist[kind].length}건 있음)</div>`
     :`<div class="hx-empty">등록된 처리이력이 없습니다 — '📋 처리이력 붙여넣기'로 입력하세요</div>`;
   const isI=kind==='inst';
@@ -1016,7 +1034,7 @@ function histCards(kind){
     +names.filter(n=>cnt[n]).map(n=>`<span class="stage-pill${sel===n?' active':''}" onclick="setHxRegion('${n}','${kind}')">${n} <b>${cnt[n]}</b></span>`).join('')+`</div>`;
   let h=(isI?histFixSection(list,info)+`<div class="hx-h" style="margin-top:18px">현장별 처리이력</div>`:'')+(shared||!isI?'':pills);
   if(!isI&&!shared)window._regBar=pills;
-  if(!isI)return h+histTable(kind,list.filter(r=>!sel||info.get(r).region===sel),info);
+  if(!isI)return h+histTable(kind,list.filter(r=>!sel||info.get(r).region===sel),info,extra);
   names.filter(n=>cnt[n]&&(!sel||sel===n)).forEach(n=>{
     h+=`<div class="hx-grp${n===HX_NONE?' none':''}"><div class="hx-grp-h">${n}<span class="n">${cnt[n]}곳</span>${n===HX_NONE?'<span class="n">전화번호로 지역본부를 찾지 못한 현장 — 카드의 지역본부 칸에서 직접 지정하세요</span>':''}</div><div class="hx-grid">${list.filter(r=>info.get(r).region===n).map(r=>histCardHtml(kind,r,info.get(r))).join('')}</div></div>`
   });
@@ -1026,10 +1044,9 @@ function rHist(kind){
   const list=histVisible(kind);
   const withFix=list.filter(r=>r.items.some(i=>HIST_FIX.test(i.result))).length;
   const done=list.filter(r=>{if(kind==='app')return !!histSel(r);const l=[...r.items].sort((a,b)=>b.no-a.no)[0];return l&&l.result==='적합';}).length;
-  let h=`<div class="dur-cards">
-    <div class="dur-card"><div class="dl">${HIST_LABEL[kind]} 현장</div><div class="dv">${list.length}건</div></div>
-    <div class="dur-card"><div class="dl">보완 이력 있음</div><div class="dv">${withFix}건</div></div>
-    <div class="dur-card"><div class="dl">${kind==='app'?'선정 (최종 적합)':'최종 결과 적합'}</div><div class="dv">${done}건</div></div></div>`;
+  const durs=list.map(r=>histDoneDays(kind,r));
+  const pre=`<span class="hx-st-i">${HIST_LABEL[kind]} 현장 <b>${list.length}곳</b></span><span class="hx-st-i">보완 이력 있음 <b>${withFix}건</b></span>`;
+  const h=`<div class="hx-h">${kind==='app'?'처리이력 · 보완내역':HIST_LABEL[kind]+' 처리이력'}${hxStat(durs,kind==='app'?'선정(최종 적합)':'최종 적합',pre)}</div>`;
   return h+histCards(kind);
 }
 window.showHistImp=kind=>{
@@ -1109,6 +1126,19 @@ function parseChg(text){
   });
   return rows;
 }
+function histDoneDays(kind,r){
+  const its=[...r.items].sort((a,b)=>b.no-a.no);if(!its.length)return null;
+  const firstD=its.reduce((m,i)=>i.dt<m?i.dt:m,its[0].dt).slice(0,10);
+  if(kind==='app'){const sl=histSel(r);return sl?dB(firstD,sl.dt.slice(0,10)):null;}
+  if(!/적합|승인/.test(its[0].result||''))return null;
+  return dB(firstD,its.reduce((m,i)=>i.dt>m?i.dt:m,'').slice(0,10));
+}
+function hxStat(durs,label,pre){
+  durs=durs.filter(d=>d!==null&&d!==undefined);
+  if(!durs.length)return `<span class="hx-st">${pre||''}<span class="hx-st-i">${label} 0건</span></span>`;
+  const avg=Math.round(durs.reduce((a,b)=>a+b,0)/durs.length*10)/10;
+  return `<span class="hx-st">${pre||''}<span class="hx-st-i">${label} <b>${durs.length}건</b></span><span class="hx-st-i">평균 소요일수 <b>${avg}일</b></span><span class="hx-st-i">최소~최대 <b>${Math.min(...durs)}일 ~ ${Math.max(...durs)}일</b></span></span>`;
+}
 function chgStats(rows){
   const durs=rows.map(r=>dB(r.appDate,r.apprDate)).filter(d=>d!==null&&d!==undefined);
   if(!durs.length)return null;
@@ -1141,50 +1171,11 @@ function rChg(){
   const regPills=`<div class="stage-pills" style="margin:0 0 12px"><span class="hx-prl">본부</span><span class="stage-pill${chgRegSel?'':' active'}" onclick="setChgReg('')">전체 <b>${all.length}</b></span>`
     +topNames.map(n=>`<span class="stage-pill${chgRegSel===n?' active':''}" onclick="setChgReg('${n}')">${n} <b>${rc[n]||cardReg[n]}</b></span>`).join('')+`</div>`;
   window._regBar=regPills;
-  let h=`<div class="hx-h">처리이력 · 보완내역</div>`+histCards('chg');
-  h+=`<div class="hx-h" style="margin-top:18px">변경 신청 → 승인 소요일수</div>`;
-  h+=`<div class="dur-cards">`;
-  h+= st?`<div class="dur-card"><div class="dl">건수 (승인완료)</div><div class="dv">${st.cnt}건</div></div>
-    <div class="dur-card"><div class="dl">평균 소요일수</div><div class="dv">${st.avg}일</div></div>
-    <div class="dur-card"><div class="dl">최소 ~ 최대</div><div class="dv">${st.min}일 <span class="dv-arrow">~</span> ${st.max}일</div></div>`
-    :`<div class="dur-card dur-empty">승인일이 입력된 건이 없습니다</div>`;
-  h+=`</div>`;
-  h+=`<div class="dt-wrap"><table class="dt"><thead><tr>
-    <th ${sa('mgmt')}>신청번호${ar('mgmt')}</th>
-    <th ${sa('year')}>참여년도${ar('year')}</th>
-    <th ${sa('round')}>차수${ar('round')}</th>
-    <th ${sa('etype')}>에너지원${ar('etype')}</th>
-    <th ${sa('org')} style="text-align:left">신청기관명${ar('org')}</th>
-    <th ${sa('regionCode')}>지역코드${ar('regionCode')}</th>
-    <th ${sa('branch')}>담당지사${ar('branch')}</th>
-    <th ${sa('chgNo')}>변경신청번호${ar('chgNo')}</th>
-    <th ${sa('appDate')}>변경신청일${ar('appDate')}</th>
-    <th ${sa('apprDate')}>변경승인일${ar('apprDate')}</th>
-    <th ${sa('dur')}>소요일수${ar('dur')}</th>
-    <th ${sa('result')}>변경상태${ar('result')}</th>
-    <th style="text-align:left">변경사유</th>
-  </tr></thead><tbody>`;
-  if(!rows.length)h+=`<tr><td colspan="13" style="padding:22px 0;color:#c9d6ee;font-size:19px">${chgData.length?`${selYear}년${selRound?' '+selRound+'차':''}에 해당하는 변경신청 이력이 없습니다 (다른 연도·차수에 ${chgData.length}건 있음)`:`등록된 변경신청 이력이 없습니다 — '📋 변경이력 붙여넣기'로 데이터를 입력하세요`}</td></tr>`;
-  rows.forEach(r=>{
-    const d=dB(r.appDate,r.apprDate);
-    h+=`<tr>
-      <td>${esc(r.mgmt)}</td>
-      <td>${esc(r.year)}</td>
-      <td>${r.round?r.round+'차':'<span style="color:#c9d6ee">-</span>'}</td>
-      <td>${esc(r.etype)}</td>
-      <td style="padding-left:8px;text-align:left;font-weight:600">${esc(r.org)}</td>
-      <td>${esc(r.regionCode)}</td>
-      <td>${esc(r.branch)}</td>
-      <td>${esc(r.chgNo)}</td>
-      <td style="color:#5c6b86">${esc(r.appDate)}</td>
-      <td style="color:#5c6b86">${esc(r.apprDate)||'-'}</td>
-      <td>${d!==null?`<b style="color:${chgDurColor(d)}">${d}일</b>`:'<span style="color:#c9d6ee">진행중</span>'}</td>
-      <td><span class="badge ${bc2(r.result)}">${esc(r.result)||'-'}</span></td>
-      <td class="memo-cell has" style="text-align:left;white-space:normal;overflow:visible;text-overflow:clip;max-width:none;min-width:360px;line-height:1.5;padding:6px 10px;color:#1c2a4a;font-size:18px">${esc(r.reason)}</td>
-    </tr>`;
-  });
-  h+='</tbody></table></div>';
-  return h;
+  window._chgExtra=rows;
+  const hl=histVisible('chg').filter(r=>!chgRegSel||histRegionInfo(r).region===chgRegSel);
+  const durs=rows.map(r=>dB(r.appDate,r.apprDate)).filter(d=>d!==null&&d!==undefined);
+  hl.forEach(r=>{const dd=histDoneDays('chg',r);if(dd!==null)durs.push(dd);});
+  return `<div class="hx-h">처리이력 · 보완내역${hxStat(durs,'승인완료')}</div>`+histCards('chg');
 }
 
 
