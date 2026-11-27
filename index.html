@@ -318,6 +318,8 @@ body.f10,body.f10 :is(input,select,textarea,button,table,th,td,code){font-family
 .gt-bar.out-l .gt-bt{left:auto;right:100%;margin-right:4px;color:var(--c);text-shadow:none}
 .gt-bar.out-x .gt-bt{display:none}
 .gt-mk{width:8px!important;height:8px!important;top:auto!important;bottom:-4px!important;margin:0 0 0 -4px!important;border-width:1.5px!important}
+
+.header{text-align:center}.site-title{display:inline-block;min-width:120px;font-size:24px;font-weight:700;color:#ffd23f;line-height:1.2;padding:0 10px;border-radius:8px;outline:none;cursor:text}.site-title:hover{background:rgba(255,255,255,.1)}.site-title:focus{background:rgba(255,255,255,.18)}
 </style>
 </head>
 <body>
@@ -511,9 +513,11 @@ const D=[
 const SAVE_KEY='bst_data_v2';
 let lastSyncedAt=0; // 이 기기에서 마지막으로 반영된 데이터의 시각(로컬 저장 or 원격 수신)
 
+let siteTitle='건물지원사업_이미지';try{siteTitle=localStorage.getItem('bst_title')||siteTitle}catch(e){}
+window.setSiteTitle=t=>{t=String(t||'').replace(/\s+/g,' ').trim()||'건물지원사업_이미지';siteTitle=t;try{localStorage.setItem('bst_title',t)}catch(e){}saveAll();document.title=t;};
 function saveAll(){
   lastSyncedAt=Date.now();
-  const payload={data,nid,siteInfo,siteMemo,siteAdvE,siteGrE,selYear,chgData,chgNid,hist,histNid};
+  const payload={data,nid,siteInfo,siteMemo,siteAdvE,siteGrE,selYear,chgData,chgNid,hist,histNid,siteTitle};
   try{localStorage.setItem(SAVE_KEY,JSON.stringify({...payload,_updatedAt:lastSyncedAt}));}catch(e){}
   if(window.fbSaveData)window.fbSaveData(payload);
 }
@@ -533,6 +537,7 @@ function loadAll(){
   return false;
 }
 function applyRemote(o){
+  if(o&&o.siteTitle){siteTitle=o.siteTitle;try{localStorage.setItem('bst_title',siteTitle)}catch(e){}}
   if(!o||!o.data||!o.data.length)return;
   data=o.data;nid=o.nid||200;siteInfo=o.siteInfo||{};siteMemo=o.siteMemo||{};siteAdvE=o.siteAdvE||{};siteGrE=o.siteGrE||{};selYear=o.selYear||TY;
   chgData=o.chgData||[];chgNid=o.chgNid||1;hist=normHist(o.hist);histNid=o.histNid||1;
@@ -1212,7 +1217,7 @@ function render(){
   const years=getYears();
   const showYr=!(cv==='calendar'||cv==='guide');
   const yrBar=showYr?`<div class="tb-left">${years.map(y=>`<button class="yp${y===selYear?' on':''}" onclick="chgYear(${y})">${y}년</button>`).join('')}<span class="yp-sep"></span>${[0,1,2].map(r=>`<button class="rp${r===selRound?' on':''}" onclick="chgRound(${r})">${r===0?'전체':r+'차'}</button>`).join('')}</div>`:'';
-  let h=`<div class="header"><button class="gear" onclick="toggleFontSel()" title="글꼴 설정">⚙</button>
+  let h=`<div class="header"><button class="gear" onclick="toggleFontSel()" title="글꼴 설정">⚙</button><div class="site-title" contenteditable="true" spellcheck="false" title="눌러서 제목 수정 (Enter로 저장)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onblur="setSiteTitle(this.textContent);this.textContent=siteTitle">${esc(siteTitle)}</div>
   <select id="fontSel" class="font-sel" style="display:${window._fsOpen?'block':'none'}" onchange="setFont(this.value)" title="글꼴 바꾸기">${FONTS.map((f,i)=>`<option value="${i+1}"${String(fontNo)===String(i+1)?' selected':''}>${f[0]}${f.ok===false?' (글꼴 파일 없음)':''}</option>`).join('')}</select>
   ${selStage?`<div style="text-align:center;margin-top:12px;font-size:18px;color:#F3C39F">'${selStage}' 단계만 보는 중 · <span style="cursor:pointer;text-decoration:underline" onclick="clearStage()">필터 해제</span></div>`:''}
   </div>
@@ -1520,7 +1525,8 @@ function rGantt(fl){
     const mg={};r.segs.forEach(g=>{const k=g.ph+'|'+g.start+'|'+(g.end||'');if(mg[k])mg[k].n++;else mg[k]={...g,n:1};});
     const segs=Object.values(mg);
     const bars=segs.map(g=>{const l=pct(g.start),w=Math.max(.5,pct(g.eff)-l),c=PH[g.ph].c;
-      const txt=`${PH[g.ph].s} ${md(g.start)}→${g.done?md(g.end):'진행중'}${g.n>1?' ×'+g.n:''}`;
+      const dd=Math.round((tm(g.eff)-tm(g.start))/864e5);
+      const txt=`${PH[g.ph].s} ${md(g.start)}→${g.done?md(g.end):'진행중'} · ${dd}일${g.n>1?' ×'+g.n:''}`;
       return `<div class="gt-bar${g.done?'':' ing'}" style="left:${l}%;width:${w}%;background:${c};--c:${c}" title="${PH[g.ph].l} ${g.start} → ${g.end||'진행중'}${g.n>1?' ('+g.n+'건)':''}" ${r.site?`onclick="showSiteEvents('${r.site.replace(/'/g,"\\'")}')"`:''}>${g.ph==='app'?mk:''}<span class="gt-bt">${txt}</span></div>`;}).join('');
     h+=`<div class="gt-row"><div class="gt-name" title="${esc(r.name)}">${esc(r.name)}</div><div class="gt-area">${bars}</div></div>`;
   });
