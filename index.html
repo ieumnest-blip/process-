@@ -336,6 +336,14 @@ body.f10,body.f10 :is(input,select,textarea,button,table,th,td,code){font-family
 .hd-t input[type=color]{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}
 .gear{left:auto !important;right:10px}
 .font-sel{position:absolute;right:40px;top:50%;transform:translateY(-50%);z-index:5}
+
+.hx-h{display:flex;align-items:center;flex-wrap:wrap;row-gap:4px}
+.hx-regs{margin-left:26px;padding-left:22px;border-left:2px solid #c9d3e6;display:inline-flex;align-items:center}
+.hx-regs .stage-pills{margin:0 !important;gap:2px;flex-wrap:wrap}
+.hx-regs .hx-prl{font-size:15px;margin-right:4px}
+.hx-regs .stage-pill{border:none !important;background:none !important;border-radius:0 !important;border-bottom:3px solid transparent !important;font-size:16px;font-weight:500;color:#5c6b86 !important;padding:2px 9px !important;box-shadow:none !important}
+.hx-regs .stage-pill b{color:#e8820c}
+.hx-regs .stage-pill.active{border-bottom-color:#e8820c !important;color:#22336b !important;font-weight:700}
 </style>
 </head>
 <body>
@@ -1070,8 +1078,9 @@ function rHist(kind){
   }
   const durs=list.map(r=>histDoneDays(kind,r));
   const pre=`<span class="hx-st-i">${HIST_LABEL[kind]} 현장 <b>${list.length}곳</b></span><span class="hx-st-i">보완 이력 있음 <b>${withFix}건</b></span>`;
-  const h=`<div class="hx-h">${kind==='app'?'처리이력 · 보완내역':HIST_LABEL[kind]+' 처리이력'}${hxStat(durs,kind==='app'?'선정(최종 적합)':'최종 적합',pre)}</div>`;
-  return h+histCards(kind);
+  const body=histCards(kind);const rb=window._regBar||'';window._regBar='';
+  const h=`<div class="hx-h">${kind==='app'?'처리이력 · 보완내역':HIST_LABEL[kind]+' 처리이력'}${hxStat(durs,kind==='app'?'선정(최종 적합)':'최종 적합',pre)}${rb?`<span class="hx-regs">${rb}</span>`:''}</div>`;
+  return h+body;
 }
 window.showHistImp=kind=>{
   const ov=document.createElement('div');ov.className='ov';ov.onclick=e=>{if(e.target===ov)ov.remove();};
@@ -1199,7 +1208,8 @@ function rChg(){
   const hl=histVisible('chg').filter(r=>!chgRegSel||histRegionInfo(r).region===chgRegSel);
   const durs=rows.map(r=>dB(r.appDate,r.apprDate)).filter(d=>d!==null&&d!==undefined);
   hl.forEach(r=>{const dd=histDoneDays('chg',r);if(dd!==null)durs.push(dd);});
-  return `<div class="hx-h">처리이력 · 보완내역${hxStat(durs,'승인완료')}</div>`+histCards('chg');
+  const body=histCards('chg');const rb=window._regBar||'';window._regBar='';
+  return `<div class="hx-h">처리이력 · 보완내역${hxStat(durs,'승인완료')}${rb?`<span class="hx-regs">${rb}</span>`:''}</div>`+body;
 }
 
 
