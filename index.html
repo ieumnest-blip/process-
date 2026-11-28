@@ -271,6 +271,7 @@ body.f5,body.f5 :is(input,select,textarea,button,table,th,td,code){font-family:'
 .gt-lb{position:absolute;top:0;bottom:0;display:flex;align-items:center;gap:0;font-size:13px;font-weight:700;color:#1c2a4a;white-space:nowrap;pointer-events:none}
 .gt-mk{position:absolute;top:50%;width:11px;height:11px;margin:-5px 0 0 -5px;border-radius:50%;border:2px solid #fff;cursor:pointer;z-index:2}
 .gt-today{display:none;position:absolute;top:26px;bottom:0;width:0;border-left:2px solid #e8820c;pointer-events:none;z-index:3}
+@media(max-width:700px){.tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{flex:0 0 auto;white-space:nowrap;font-size:15px;padding:8px 12px}.header{padding:8px 12px !important;min-height:44px !important}}
 @media(max-width:700px){.gt-name{flex-basis:86px;font-size:13px}}
 
 .tab{user-select:none}.tab.drop-l{box-shadow:inset 4px 0 0 #e8820c}.tab.drop-r{box-shadow:inset -4px 0 0 #e8820c}
@@ -350,6 +351,7 @@ body.f10,body.f10 :is(input,select,textarea,button,table,th,td,code){font-family
 .gm-t{font-size:14px;font-weight:700;color:#5c6b86;margin:4px 0}
 .gm-r{display:flex;gap:6px}
 .gear-menu .font-sel{position:static !important;transform:none !important;display:block !important;width:100%;margin-bottom:8px}
+@media(max-width:700px){.tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{flex:0 0 auto;white-space:nowrap;font-size:15px;padding:8px 12px}.header{padding:8px 12px !important;min-height:44px !important}}
 </style>
 </head>
 <body>
@@ -1276,7 +1278,7 @@ window.tabDP=e=>{e.preventDefault();const el=e.currentTarget,to=el.dataset.k,fro
   const r=el.getBoundingClientRect(),after=e.clientX>=r.left+r.width/2;
   const ks=tabOrder().map(t=>t.k).filter(k=>k!==from);let i=ks.indexOf(to);if(after)i++;ks.splice(i,0,from);
   try{localStorage.setItem('bst_taborder',JSON.stringify(ks))}catch(x){}_tabDrag=null;render();};
-window.fixGuideH=function(){const f=document.getElementById('guideFrame');if(!f)return;f.style.height=Math.max(400,window.innerHeight-f.getBoundingClientRect().top-6)+'px';};
+window.fixGuideH=function(){const f=document.getElementById('guideFrame');if(!f)return;f.style.height=Math.max(window.innerWidth<=700?560:400,window.innerHeight-f.getBoundingClientRect().top-6)+'px';};
 window.toggleFontSel=()=>{window._fsOpen=!window._fsOpen;const e=document.getElementById('gearMenu');if(e)e.style.display=window._fsOpen?'block':'none';};
 function render(){
   if(cv==='date')cv='duration';
@@ -1309,7 +1311,7 @@ function render(){
   <div class="content" id="ct">${ctHtml}</div>`;
   document.getElementById('app').innerHTML=h;
   applyFont();checkFonts();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(window.layoutGantt&&cv==='calendar')layoutGantt()});
-  if(cv==='guide'){document.querySelectorAll('.toolbar,.chips').forEach(x=>x.style.display='none');fixGuideH();}
+  if(cv==='guide'){document.querySelectorAll('.toolbar,.chips').forEach(x=>x.style.display='none');fixGuideH();}{const a=document.querySelector('.tab.active'),t=document.querySelector('.tabs');if(a&&t&&t.scrollWidth>t.clientWidth)t.scrollLeft=a.offsetLeft-12;}
   if(cv==='calendar'){fixCalH();fixYearH();scrollCalToCenter();}
 }
 
